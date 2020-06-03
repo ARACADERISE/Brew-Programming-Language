@@ -1,10 +1,14 @@
 .PHONY: all
+.PHONY: clean
 .PHONY: main.c
 
-all: main.c lexer/lexer.h
+all: main.c src/lexer.c
 
 main.c:
-	gcc -Wall -o main.o main.c lexer/lexer.c lexer/token.c
+	gcc -Wall -o main.o main.c  src/parser.c src/ast.c src/lexer.c src/token.c
 
-run: lexer/lexer.c lexer/token.c main.c
+run: src/parser.c src/ast.c src/lexer.c src/token.c main.c
 	./main.o
+
+clean:
+	-rm *.o

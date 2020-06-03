@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -29,8 +30,16 @@ token_T* lexer_get_next_token(lexer_T* lexer) {
         if(lexer->c == ' ' || lexer->c == 10) 
             lexer_skip_whitespace(lexer);
         
-        if(isalnum(lexer->c))
+        if(isalnum(lexer->c)) {
+            /* Finding type declarations. Will be inside of square brackets */
+            if(lexer->c == 'S' || lexer->c == 's')
+                return lexer_advance_with_token(lexer,init_token(TOKEN_TYPE_STRING,lexer_get_current_char_as_string(lexer)));
+            if(lexer->c == 'I' || lexer->c == 'i')
+                return lexer_advance_with_token(lexer,init_token(TOKEN_TYPE_INT,lexer_get_current_char_as_string(lexer)));
+            if(lexer->c == 'C' || lexer->c == 'c')
+                return lexer_advance_with_token(lexer,init_token(TOKEN_TYPE_CHAR,lexer_get_current_char_as_string(lexer)));
             return lexer_collect_id(lexer);
+        }
         
         if(lexer->c == '"')
             return lexer_collect_string(lexer);
@@ -39,6 +48,8 @@ token_T* lexer_get_next_token(lexer_T* lexer) {
             case ':': return lexer_advance_with_token(lexer,init_token(TOKEN_COLON,lexer_get_current_char_as_string(lexer))); break;
             case '[': return lexer_advance_with_token(lexer,init_token(TOKEN_LSQRBRACK,lexer_get_current_char_as_string(lexer))); break;
             case ']': return lexer_advance_with_token(lexer,init_token(TOKEN_RSQRBRACK,lexer_get_current_char_as_string(lexer))); break;
+            case '(': return lexer_advance_with_token(lexer,init_token(TOKEN_LPARENT,lexer_get_current_char_as_string(lexer))); break;
+            case ')': return lexer_advance_with_token(lexer,init_token(TOKEN_RPARENT,lexer_get_current_char_as_string(lexer))); break;
             case ';': return lexer_advance_with_token(lexer,init_token(TOKEN_SEMI,lexer_get_current_char_as_string(lexer))); break;
         }
     }

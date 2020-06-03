@@ -6,9 +6,14 @@ typedef struct TOKEN_STRUCT {
         TOKEN_ID,
         TOKEN_COLON,
         TOKEN_STRING,
+        TOKEN_TYPE_STRING,
+        TOKEN_TYPE_INT,
+        TOKEN_TYPE_CHAR,
         TOKEN_SEMI,
         TOKEN_LSQRBRACK,
-        TOKEN_RSQRBRACK
+        TOKEN_RSQRBRACK,
+        TOKEN_LPARENT,
+        TOKEN_RPARENT
     } type;
 
     char *value;
