@@ -5,7 +5,7 @@
 
 int main(void) {
 
-    lexer_T* lexer = init_lexer("make [S]myName:\"AIDAN\";\n""print[S](myName);");
+    lexer_T* lexer = init_lexer("make [S]myName:\"AIDAN\";\n""print[Str](myName);\n");
     token_T* token = (void*)0;
 
     parser_T* parser = init_parser(lexer);

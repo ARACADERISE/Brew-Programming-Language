@@ -3,6 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 #include "lexer.h"
+#include "parser.h"
 #include "token.h"
 
 lexer_T* init_lexer(char *contents) {
@@ -26,14 +27,16 @@ void lexer_skip_whitespace(lexer_T *lexer) {
     }
 }
 token_T* lexer_get_next_token(lexer_T* lexer) {
+
     while(lexer->c != '\0' && lexer->i < strlen(lexer->contents)) {
         if(lexer->c == ' ' || lexer->c == 10) 
             lexer_skip_whitespace(lexer);
         
         if(isalnum(lexer->c)) {
             /* Finding type declarations. Will be inside of square brackets */
-            if(lexer->c == 'S' || lexer->c == 's')
+            if(lexer->c == 'S' || lexer->c == 's') {
                 return lexer_advance_with_token(lexer,init_token(TOKEN_TYPE_STRING,lexer_get_current_char_as_string(lexer)));
+            }
             if(lexer->c == 'I' || lexer->c == 'i')
                 return lexer_advance_with_token(lexer,init_token(TOKEN_TYPE_INT,lexer_get_current_char_as_string(lexer)));
             if(lexer->c == 'C' || lexer->c == 'c')
