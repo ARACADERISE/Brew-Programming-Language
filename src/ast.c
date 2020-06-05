@@ -10,6 +10,7 @@ AST_T* init_ast(int type) {
 
     /* For AST_VARIABLE */
     ast->variable_name = (void*)0;
+    ast->PreVariable_name = (void*)0;
 
     /* For AST_FUNCTION_CALL */
     ast->function_call_name = (void*)0;

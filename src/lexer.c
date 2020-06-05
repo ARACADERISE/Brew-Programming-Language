@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include "lexer.h"
 #include "parser.h"
 #include "token.h"
 
@@ -17,8 +16,10 @@ lexer_T* init_lexer(char *contents) {
 void lexer_advance(lexer_T *lexer) {
     
     if(lexer->c != '\0' && lexer->i < strlen(lexer->contents)) {
+
         lexer->i++;
         lexer->c = lexer->contents[lexer->i];
+                
     }
 }
 void lexer_skip_whitespace(lexer_T *lexer) {
@@ -32,6 +33,7 @@ token_T* lexer_get_next_token(lexer_T* lexer) {
         if(lexer->c == ' ' || lexer->c == 10) 
             lexer_skip_whitespace(lexer);
         
+
         if(isalnum(lexer->c)) {
             /* Finding type declarations. Will be inside of square brackets */
             if(lexer->c == 'S' || lexer->c == 's') {
@@ -49,6 +51,7 @@ token_T* lexer_get_next_token(lexer_T* lexer) {
         if(lexer->c == '"')
             return lexer_collect_string(lexer);
         
+        //SWITCH:
         switch(lexer->c) {
             case ':': return lexer_advance_with_token(lexer,init_token(TOKEN_COLON,lexer_get_current_char_as_string(lexer))); break;
             case '~': return lexer_advance_with_token(lexer,init_token(TOKEN_TYPE_ANY,lexer_get_current_char_as_string(lexer)));break;
@@ -58,7 +61,21 @@ token_T* lexer_get_next_token(lexer_T* lexer) {
             case ')': return lexer_advance_with_token(lexer,init_token(TOKEN_RPARENT,lexer_get_current_char_as_string(lexer))); break;
             case ';': return lexer_advance_with_token(lexer,init_token(TOKEN_SEMI,lexer_get_current_char_as_string(lexer))); break;
             case ',': return lexer_advance_with_token(lexer,init_token(TOKEN_COMMA,lexer_get_current_char_as_string(lexer))); break;
-            //case '~': return lexer_advance_with_token(lexer,init_token(TOKEN_TYPE_ANY,lexer_get_current_char_as_string(lexer))); break;
+            /*
+                #> - #define constantName constantVal
+                # - #define MacroName(args) MacroCode.
+
+                As of right now, both are the same.
+            */
+            case '#': {
+                lexer_advance_with_token(lexer,init_token(TOKEN_PRESET,lexer_get_current_char_as_string(lexer)));
+
+                if(lexer->c == '>')
+                    return lexer_advance_with_token(lexer,init_token(TOKEN_PRESET_TYPE_SETVAR,lexer_get_current_char_as_string(lexer)));
+                else
+                    return lexer_advance_with_token(lexer,init_token(TOKEN_PRESET,lexer_get_current_char_as_string(lexer)));
+                break;
+            }
         }
     }
     return init_token(TOKEN_EOF, "\0");

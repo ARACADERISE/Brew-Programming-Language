@@ -16,7 +16,9 @@ typedef struct TOKEN_STRUCT {
         TOKEN_RSQRBRACK,
         TOKEN_LPARENT,
         TOKEN_RPARENT,
-        TOKEN_EOF
+        TOKEN_PRESET,
+        TOKEN_PRESET_TYPE_SETVAR,
+        TOKEN_EOF,
     } type;
 
     char *value;

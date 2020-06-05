@@ -3,6 +3,13 @@
 #include <stdio.h>
 #include "parser.h"
 
+static inline lexer_T* set_token_back(lexer_T* lexer, int ammount) {
+
+    lexer->i -= ammount;
+    lexer->c = lexer->contents[lexer->i];
+
+    return lexer;
+}
 static inline void PrintErr(parser_T* parser) {
     printf("\n\nERR: Type of %s is not valid for print declaration. Types S, I, C and ~ are for variable declarations.\n\n",parser->current_token->value);
     exit(1);
@@ -40,6 +47,9 @@ void parser_eat(TypeAndValue* TAV,parser_T* parser, int token_type) {
 
         if(parser->current_token->type==TOKEN_LSQRBRACK) {
             parser->current_token = lexer_get_next_token(parser->lexer);
+        } else {
+            printf("\n\nERR: the print function needs params: [TYPE](ItemToPrint). Missing [TYPE].\n\n");
+            exit(1);
         }
 
         /*
@@ -48,20 +58,44 @@ void parser_eat(TypeAndValue* TAV,parser_T* parser, int token_type) {
             for print type any 
         */
         
-        if(strcmp(parser->current_token->value,"S")==0||strcmp(parser->current_token->value,"String")==0||strcmp(parser->current_token->value,"Str")==0) {
+        // Getting type. Cannot be just S
+        char type[12];
+        if(strcmp(parser->current_token->value,"S")==0||strcmp(parser->current_token->value,"s")==0) {
+            type[0]=parser->current_token->value[0];
+            parser->current_token = lexer_get_next_token(parser->lexer);
+            type[1]=parser->current_token->value[0];
+            set_token_back(parser->lexer,2);
+        }
+        if(strcmp(parser->current_token->value,"I")==0||strcmp(parser->current_token->value,"i")==0) {
+            type[0]=parser->current_token->value[0];
+            parser->current_token = lexer_get_next_token(parser->lexer);
+            type[1]=parser->current_token->value[0];
+            set_token_back(parser->lexer,2);
+        }
+        if(strcmp(parser->current_token->value,"C")==0||strcmp(parser->current_token->value,"c")==0) {
+            type[0]=parser->current_token->value[0];
+            parser->current_token = lexer_get_next_token(parser->lexer);
+            type[1]=parser->current_token->value[0];
+            set_token_back(parser->lexer,2);
+        }
+
+        if(strcmp(type,"St")==0||strcmp(type,"st")==0) {
             printf("String ~ ");
             strcpy(TAV->ForPrint.Type[TAV->ForPrint.TypeIndex],parser->current_token->value);
-            printf("%s:",TAV->ForPrint.Type[TAV->ForPrint.TypeIndex--]);
             parser->current_token = lexer_get_next_token(parser->lexer);
-        } else if(strcmp(parser->current_token->value,"Integer")==0||strcmp(parser->current_token->value,"Int")==0) {
+        } else if(strcmp(type,"In")==0||strcmp(type,"in")==0) {
             printf("Integer ~ ");
             strcpy(TAV->ForPrint.Type[TAV->ForPrint.TypeIndex],parser->current_token->value);
             parser->current_token = lexer_get_next_token(parser->lexer);
-        } else if(strcmp(parser->current_token->value,"Character")==0||strcmp(parser->current_token->value,"Char")==0) {
+        } else if(strcmp(type,"Ch")==0||strcmp(type,"ch")==0) {
             printf("Character ~ ");
             strcpy(TAV->ForPrint.Type[TAV->ForPrint.TypeIndex],parser->current_token->value);
             parser->current_token = lexer_get_next_token(parser->lexer);
         } else {
+            if(parser->current_token->type!=TOKEN_RSQRBRACK) {
+                printf("\n\nErr: The type '%s' is not valid.\nHint: If you don't want to print a certain type, leave the [TYPE] empty.\n\n",parser->current_token->value);
+                exit(1);
+            }
             printf("Any ~ ");
             /*
                 *****************************
@@ -85,14 +119,18 @@ void parser_eat(TypeAndValue* TAV,parser_T* parser, int token_type) {
         }
     }
 
-    if(parser->current_token->type == token_type) {
-        if(strcmp(parser->current_token->value,"~")==0) {
-            strcpy(TAV->ForSetup.Type[TAV->ForSetup.TypeIndex],"Any");
-        }
+    if(parser->current_token->type==TOKEN_PRESET) {
         parser->current_token = lexer_get_next_token(parser->lexer);
     } else {
-        printf("Unexpected token '%s' with type %d",parser->current_token->value,parser->current_token->type);
-        exit(1);
+        if(parser->current_token->type == token_type) {
+            if(strcmp(parser->current_token->value,"~")==0) {
+                strcpy(TAV->ForSetup.Type[TAV->ForSetup.TypeIndex],"Any");
+            }
+            parser->current_token = lexer_get_next_token(parser->lexer);
+        } else {
+            printf("Unexpected token '%s' with type %d",parser->current_token->value,parser->current_token->type);
+            exit(1);
+        }
     }
 }
 AST_T* parser_parse(parser_T* parser) {
@@ -101,8 +139,11 @@ AST_T* parser_parse(parser_T* parser) {
     return parser_parse_statements(TAV,parser);
 }
 AST_T* parser_parse_statement(parser_T* parser) {
+    //parser->current_token->type=0;
     switch(parser->current_token->type) {
         case TOKEN_ID: return parser_parse_id(parser);
+        case TOKEN_PRESET: return parser_parse_preVar(parser);
+        case TOKEN_PRESET_TYPE_SETVAR: return parser_parse_preVar(parser);
     }
     /*if(parser->current_token->value[0]=='c') {
         parser->current_token->type=0;
@@ -110,6 +151,40 @@ AST_T* parser_parse_statement(parser_T* parser) {
     }*/
 
     return init_ast(AST_NOOP);
+}
+AST_T* parser_parse_preVar(parser_T* parser) {
+
+    TypeAndValue* TAV = calloc(1,sizeof(TypeAndValue));
+    UpdTAV(TAV);
+
+    if(parser->current_token->type==TOKEN_PRESET)
+        parser_eat(TAV,parser,TOKEN_PRESET);
+    
+    if(parser->current_token->type==TOKEN_PRESET_TYPE_SETVAR)
+        parser_eat(TAV,parser,TOKEN_PRESET_TYPE_SETVAR);
+    
+    if(parser->current_token->type==TOKEN_LSQRBRACK) {
+        printf("\n\n\033[1;35mWarning:\033[0m # directives do not need [TYPE].\n\n");
+        parser_eat(TAV,parser,TOKEN_LSQRBRACK);
+    }
+    if(parser->current_token->type==TOKEN_RSQRBRACK)
+        parser_eat(TAV,parser,TOKEN_RSQRBRACK);
+    
+    char* PreVarName = parser->current_token->value;
+    
+    AST_T* variable_definition_value = parser_parse_expr(parser);
+    AST_T* variable_definition = init_ast(AST_VARIABLE_DEFINITION);
+
+    variable_definition->variable_definition_variable_name = PreVarName;
+    variable_definition->variable_definition_value = parser->current_token->value;
+    
+    /* We need to make sure to get the token after the string and semi colon. */
+    parser_eat(TAV,parser,TOKEN_STRING);
+    parser_eat(TAV,parser,TOKEN_SEMI);
+
+    parser_parse_id(parser);
+    
+    return parser;
 }
 AST_T* parser_parse_statements(TypeAndValue* TAV,parser_T* parser) {
 
@@ -182,11 +257,12 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
     UpdTAV(TAV);
 
     parser_eat(TAV,parser, TOKEN_ID);
+
     if(parser->current_token->type == TOKEN_LSQRBRACK)
-        parser_eat(TAV,parser, TOKEN_LSQRBRACK);
+        parser_eat(TAV,parser,TOKEN_LSQRBRACK);
     else if(!(parser->current_token->type == TOKEN_LSQRBRACK))
         if(!(parser->current_token->type==TOKEN_TYPE_ANY)) {
-            printf("\n\nERR: Must have '[' and ']' surrounding type other than type Any '~'\nLINE:%d\n",__LINE__);
+            printf("\n\nERR: Must have '[' and ']' surrounding type other than type Any '~'\n\n");
             exit(1);
         }
     if(parser->current_token->type==TOKEN_TYPE_STRING) /* = [S] or [s]*/
@@ -261,4 +337,19 @@ AST_T* parser_parse_id(parser_T* parser) {
     }
     else
         return parser_parse_variable(TAV,parser);
+}
+lexer_T* parser_parser_pre_variable(lexer_T* lexer) {
+    TypeAndValue* TAV = calloc(1,sizeof(TypeAndValue));
+    UpdTAV(TAV);
+    parser_T* parser = calloc(1,sizeof(struct PARSER_STRUCT));
+    init_parser(lexer);
+
+    if(lexer->c == '[') {
+        lexer_advance_with_token(lexer,init_token(TOKEN_LSQRBRACK,lexer_get_current_char_as_string(lexer)));
+        if(lexer->c=='S') {
+            lexer_advance_with_token(lexer,init_token(TOKEN_TYPE_STRING,lexer_get_current_char_as_string(lexer)));
+        }
+    }
+
+    return lexer;
 }

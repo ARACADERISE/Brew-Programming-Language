@@ -18,6 +18,7 @@ typedef struct AST_STRUCT {
 
     /* For AST_VARIABLE */
     char* variable_name;
+    char *PreVariable_name;
 
     /* For AST_FUNCTION_CALL */
     char *function_call_name;
