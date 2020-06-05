@@ -7,7 +7,7 @@ static inline void PrintErr(parser_T* parser) {
     printf("\n\nERR: Type of %s is not valid for print declaration. Types S, I, C and ~ are for variable declarations.\n\n",parser->current_token->value);
     exit(1);
 }
-inline static TypeAndValue* UpdTAV(TypeAndValue* TAV) {
+static inline TypeAndValue* UpdTAV(TypeAndValue* TAV) {
 
     if(
         /*If ForSetup.ValueIndex is nil, all the rest will be nil*/
