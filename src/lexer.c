@@ -41,6 +41,8 @@ token_T* lexer_get_next_token(lexer_T* lexer) {
                 return lexer_advance_with_token(lexer,init_token(TOKEN_TYPE_INT,lexer_get_current_char_as_string(lexer)));
             if(lexer->c == 'C' || lexer->c == 'c')
                 return lexer_advance_with_token(lexer,init_token(TOKEN_TYPE_CHAR,lexer_get_current_char_as_string(lexer)));
+            if(lexer->c=='A')
+                return lexer_advance_with_token(lexer,init_token(TOKEN_TYPE_ANY,lexer_get_current_char_as_string(lexer)));
             return lexer_collect_id(lexer);
         }
         
@@ -49,14 +51,17 @@ token_T* lexer_get_next_token(lexer_T* lexer) {
         
         switch(lexer->c) {
             case ':': return lexer_advance_with_token(lexer,init_token(TOKEN_COLON,lexer_get_current_char_as_string(lexer))); break;
+            case '~': return lexer_advance_with_token(lexer,init_token(TOKEN_TYPE_ANY,lexer_get_current_char_as_string(lexer)));break;
             case '[': return lexer_advance_with_token(lexer,init_token(TOKEN_LSQRBRACK,lexer_get_current_char_as_string(lexer))); break;
             case ']': return lexer_advance_with_token(lexer,init_token(TOKEN_RSQRBRACK,lexer_get_current_char_as_string(lexer))); break;
             case '(': return lexer_advance_with_token(lexer,init_token(TOKEN_LPARENT,lexer_get_current_char_as_string(lexer))); break;
             case ')': return lexer_advance_with_token(lexer,init_token(TOKEN_RPARENT,lexer_get_current_char_as_string(lexer))); break;
             case ';': return lexer_advance_with_token(lexer,init_token(TOKEN_SEMI,lexer_get_current_char_as_string(lexer))); break;
+            case ',': return lexer_advance_with_token(lexer,init_token(TOKEN_COMMA,lexer_get_current_char_as_string(lexer))); break;
+            //case '~': return lexer_advance_with_token(lexer,init_token(TOKEN_TYPE_ANY,lexer_get_current_char_as_string(lexer))); break;
         }
     }
-    return (void*)0;
+    return init_token(TOKEN_EOF, "\0");
 }
 token_T* lexer_collect_string(lexer_T* lexer) {
     lexer_advance(lexer);

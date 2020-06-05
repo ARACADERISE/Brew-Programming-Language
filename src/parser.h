@@ -4,14 +4,22 @@
 #include "ast.h"
 
 typedef struct {
-    int Index;
-    char Type[8][0xFFFF];
-    char Value[0xFFF][0xFFFF];
+    struct{
+        int ValueIndex,TypeIndex;
+        char Type[8][0xFFFF];
+        char Value[0xFFF][0xFFFF];
+    } ForPrint;
+    struct{
+        int ValueIndex,TypeIndex;
+        char Type[8][0xFFFF];
+        char Value[0xFFF][0xFFFF];
+    } ForSetup;
 } TypeAndValue;
 
 typedef struct PARSER_STRUCT {
     lexer_T* lexer;
     token_T* current_token;
+    token_T* prev_token;
 } parser_T;
 
 parser_T* init_parser(lexer_T* lexer);
