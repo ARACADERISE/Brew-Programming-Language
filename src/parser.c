@@ -104,10 +104,10 @@ AST_T* parser_parse_statement(parser_T* parser) {
     switch(parser->current_token->type) {
         case TOKEN_ID: return parser_parse_id(parser);
     }
-    if(parser->current_token->value[0]=='c') {
+    /*if(parser->current_token->value[0]=='c') {
         parser->current_token->type=0;
         return parser_parse_id(parser);
-    }
+    }*/
 
     return init_ast(AST_NOOP);
 }
