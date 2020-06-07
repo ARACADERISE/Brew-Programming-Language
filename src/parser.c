@@ -289,7 +289,7 @@ AST_T* parser_parse_expr(parser_T* parser) {
     switch(parser->current_token->type) {
         case TOKEN_STRING: return parser_parse_string(TAV,parser);
         case TOKEN_ID: return parser_parse_id(parser);
-        case TOKEN_EOF: return parser_parse_PreVarConstDef(TAV,parser); break;
+        //case TOKEN_EOF: return parser_parse_PreVarConstDef(TAV,parser); break;
     }
 
     return init_ast(AST_NOOP);
