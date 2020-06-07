@@ -69,11 +69,11 @@ token_T* lexer_get_next_token(lexer_T* lexer) {
             */
             case '#': {
                 lexer_advance_with_token(lexer,init_token(TOKEN_PRESET,lexer_get_current_char_as_string(lexer)));
-
-                if(lexer->c == '>')
+                if(lexer->c == '>') {
                     return lexer_advance_with_token(lexer,init_token(TOKEN_PRESET_TYPE_SETVAR,lexer_get_current_char_as_string(lexer)));
+                }
                 else
-                    return lexer_advance_with_token(lexer,init_token(TOKEN_PRESET,lexer_get_current_char_as_string(lexer)));
+                    return lexer_advance_with_token(lexer,init_token(TOKEN_PRESET_TYPE_MACRO,lexer_get_current_char_as_string(lexer)));
                 break;
             }
         }

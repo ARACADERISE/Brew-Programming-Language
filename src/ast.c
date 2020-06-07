@@ -8,9 +8,15 @@ AST_T* init_ast(int type) {
     ast->variable_definition_variable_name = (void*)0;
     ast->variable_definition_value = (void*)0;
 
+    /* For AST_PREVAR_DEFINITION */
+    ast->PreVar_name = (void*)0;
+    ast->PreVar_value = (void*)9;
+
     /* For AST_VARIABLE */
     ast->variable_name = (void*)0;
-    ast->PreVariable_name = (void*)0;
+
+    /* For AST_PREVAR */
+    ast->PreVar_variable_name = (void*)0;
 
     /* For AST_FUNCTION_CALL */
     ast->function_call_name = (void*)0;

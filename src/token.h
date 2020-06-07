@@ -16,8 +16,13 @@ typedef struct TOKEN_STRUCT {
         TOKEN_RSQRBRACK,
         TOKEN_LPARENT,
         TOKEN_RPARENT,
-        TOKEN_PRESET,
+        TOKEN_PRESET, /* 
+            This is just for the lexer when checking if the line is a Constant or Macro. 
+            It makes the return easier.
+        */
+        TOKEN_PRESET_TYPE_MACRO,
         TOKEN_PRESET_TYPE_SETVAR,
+        TOKEN_USE_KEYWORD, /* To-Do: Give meaning to this */
         TOKEN_EOF,
     } type;
 

@@ -5,7 +5,9 @@
 typedef struct AST_STRUCT {
     enum {
         AST_VARIABLE_DEFINITION,
+        AST_PREVAR_DEFINITION,
         AST_VARIABLE,
+        AST_PREVAR,
         AST_FUNCTION_CALL,
         AST_STRING,
         AST_COMPOUND,
@@ -16,9 +18,15 @@ typedef struct AST_STRUCT {
     char* variable_definition_variable_name;
     struct AST_STRUCT* variable_definition_value;
 
+    /* For AST_PREVAR_DEFINITION */
+    char* PreVar_name;
+    struct AST_STRUCT* PreVar_value;
+
     /* For AST_VARIABLE */
     char* variable_name;
-    char *PreVariable_name;
+
+    /* For AST_PREVAR */
+    char* PreVar_variable_name;
 
     /* For AST_FUNCTION_CALL */
     char *function_call_name;

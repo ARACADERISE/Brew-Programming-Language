@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+//#include <stdbool.h>
 #include <stdio.h>
 #include "parser.h"
 
@@ -45,10 +46,14 @@ void parser_eat(TypeAndValue* TAV,parser_T* parser, int token_type) {
         parser->prev_token = parser->current_token;
         parser->current_token = lexer_get_next_token(parser->lexer);
 
+        if(parser->current_token->type==TOKEN_RSQRBRACK) {
+            printf("\n\nErr: right square bracket(']') found but not left square bracket('[').\n\n");
+            exit(1);
+        }
         if(parser->current_token->type==TOKEN_LSQRBRACK) {
             parser->current_token = lexer_get_next_token(parser->lexer);
         } else {
-            printf("\n\nERR: the print function needs params: [TYPE](ItemToPrint). Missing [TYPE].\n\n");
+            printf("\n\nERR: missing left square bracket('[') for print statement.\n\n");
             exit(1);
         }
 
@@ -58,7 +63,7 @@ void parser_eat(TypeAndValue* TAV,parser_T* parser, int token_type) {
             for print type any 
         */
         
-        // Getting type. Cannot be just S
+        // Getting type. Cannot be just S, I or C
         char type[12];
         if(strcmp(parser->current_token->value,"S")==0||strcmp(parser->current_token->value,"s")==0) {
             type[0]=parser->current_token->value[0];
@@ -92,10 +97,37 @@ void parser_eat(TypeAndValue* TAV,parser_T* parser, int token_type) {
             strcpy(TAV->ForPrint.Type[TAV->ForPrint.TypeIndex],parser->current_token->value);
             parser->current_token = lexer_get_next_token(parser->lexer);
         } else {
+            
             if(parser->current_token->type!=TOKEN_RSQRBRACK) {
-                printf("\n\nErr: The type '%s' is not valid.\nHint: If you don't want to print a certain type, leave the [TYPE] empty.\n\n",parser->current_token->value);
+                if(parser->current_token->type==TOKEN_LPARENT) {
+                    printf("\n\nErr: Found only one set square brackets. Need 2, '[' and ']'. Missing ']'.\n\n");
+                    exit(1);
+                }
+                else
+                    printf("\n\nErr: The type '%s' is not valid.\nHint: If you don't want to print a certain type, leave the [TYPE] empty.\n\n",parser->current_token->value);
                 exit(1);
             }
+            parser->current_token = lexer_get_next_token(parser->lexer);
+            if(parser->current_token->type==TOKEN_RPARENT) {
+                printf("\n\nErr: Missing first parentheses for print statement. Found ')', missing '('\n\n");
+                exit(1);
+            }
+            else {
+                if(!(parser->current_token->type==TOKEN_LPARENT)) {
+                    printf("\n\nErr: print statement requires '(' and ')'. Found none.\n\n");
+                    exit(1);
+                } else {
+                    parser->current_token = lexer_get_next_token(parser->lexer);
+                }
+                if(!(parser->current_token->type==TOKEN_RPARENT)) {
+                    printf("\n\nErr: Found one set of parentheses. Needing ')'.\n\n");
+                    exit(1);
+                }
+                else {
+                    parser->current_token = lexer_get_next_token(parser->lexer);
+                }
+            }
+
             printf("Any ~ ");
             /*
                 *****************************
@@ -119,7 +151,9 @@ void parser_eat(TypeAndValue* TAV,parser_T* parser, int token_type) {
         }
     }
 
-    if(parser->current_token->type==TOKEN_PRESET) {
+    if(parser->current_token->type==TOKEN_PRESET_TYPE_MACRO) {
+        parser->current_token = lexer_get_next_token(parser->lexer);
+    } else if(parser->current_token->type==TOKEN_PRESET_TYPE_SETVAR){
         parser->current_token = lexer_get_next_token(parser->lexer);
     } else {
         if(parser->current_token->type == token_type) {
@@ -142,8 +176,8 @@ AST_T* parser_parse_statement(parser_T* parser) {
     //parser->current_token->type=0;
     switch(parser->current_token->type) {
         case TOKEN_ID: return parser_parse_id(parser);
-        case TOKEN_PRESET: return parser_parse_preVar(parser);
-        case TOKEN_PRESET_TYPE_SETVAR: return parser_parse_preVar(parser);
+        case TOKEN_PRESET_TYPE_MACRO: return parser_parse_preVarMacro(parser);
+        case TOKEN_PRESET_TYPE_SETVAR: return parser_parse_preVarConstant(parser);
     }
     /*if(parser->current_token->value[0]=='c') {
         parser->current_token->type=0;
@@ -152,69 +186,110 @@ AST_T* parser_parse_statement(parser_T* parser) {
 
     return init_ast(AST_NOOP);
 }
-AST_T* parser_parse_preVar(parser_T* parser) {
+parser_T* parser_parse_preVarMacro(parser_T* parser) {
+
+}
+parser_T* parser_parse_preVarConstant(parser_T* parser) {
 
     TypeAndValue* TAV = calloc(1,sizeof(TypeAndValue));
     UpdTAV(TAV);
 
-    if(parser->current_token->type==TOKEN_PRESET)
-        parser_eat(TAV,parser,TOKEN_PRESET);
+    parser_eat(TAV,parser,TOKEN_PRESET_TYPE_SETVAR);
     
-    if(parser->current_token->type==TOKEN_PRESET_TYPE_SETVAR)
-        parser_eat(TAV,parser,TOKEN_PRESET_TYPE_SETVAR);
+    if(parser->current_token->type==TOKEN_TYPE_ANY) {
+        printf("\n\n\033[1;35mWarning:\033[0m # directives do not require a [TYPE] param.\n\033[1;35mWarning:\033[0m Assigning %s to # directive does nothing.\n\n",parser->current_token->value);
+        parser_eat(TAV,parser,TOKEN_TYPE_ANY);
+    }
     
+
     if(parser->current_token->type==TOKEN_LSQRBRACK) {
-        printf("\n\n\033[1;35mWarning:\033[0m # directives do not need [TYPE].\n\n");
         parser_eat(TAV,parser,TOKEN_LSQRBRACK);
+        printf("\n\n\033[1;35mWarning:\033[0m # directives do not require a [TYPE] param.\n\033[1;35mWarning:\033[0m Assigning %s to # directive does nothing.\n\n",parser->current_token->value);
+
+        if(parser->current_token->type==TOKEN_TYPE_STRING)
+            parser_eat(TAV,parser,TOKEN_TYPE_STRING);
+        if(parser->current_token->type==TOKEN_TYPE_INT)
+            parser_eat(TAV,parser,TOKEN_TYPE_INT);
+        if(parser->current_token->type==TOKEN_TYPE_CHAR)
+            parser_eat(TAV,parser,TOKEN_TYPE_CHAR);
+        if(parser->current_token->type==TOKEN_TYPE_ANY)
+            parser_eat(TAV,parser,TOKEN_TYPE_ANY);
     }
     if(parser->current_token->type==TOKEN_RSQRBRACK)
         parser_eat(TAV,parser,TOKEN_RSQRBRACK);
     
     char* PreVarName = parser->current_token->value;
     
-    AST_T* variable_definition_value = parser_parse_expr(parser);
-    AST_T* variable_definition = init_ast(AST_VARIABLE_DEFINITION);
+    AST_T* variable_definition_value = calloc(1,sizeof(AST_T));
+    AST_T* variable_definition = init_ast(AST_PREVAR_DEFINITION);
+    parser_eat(TAV, parser, TOKEN_ID);
 
-    variable_definition->variable_definition_variable_name = PreVarName;
-    variable_definition->variable_definition_value = parser->current_token->value;
+    variable_definition->PreVar_variable_name = PreVarName;
+    variable_definition->PreVar_value = parser->current_token->value;
     
-    /* We need to make sure to get the token after the string and semi colon. */
+    /* We need to make sure the string and the semicolon are picked up*/
     parser_eat(TAV,parser,TOKEN_STRING);
-    parser_eat(TAV,parser,TOKEN_SEMI);
+    //parser_eat(TAV,parser,TOKEN_SEMI);
 
-    parser_parse_id(parser);
+    parser_parse_expr(parser);
     
     return parser;
 }
 AST_T* parser_parse_statements(TypeAndValue* TAV,parser_T* parser) {
-
-    AST_T* compound = init_ast(AST_COMPOUND);
-    compound->compound_value = calloc(1,sizeof(struct AST_STRUCT));
-
-    AST_T* ast_statement = parser_parse_statement(parser);
-    compound->compound_value[0] = ast_statement;
-    compound->compound_size++;
-
-    while(parser->current_token->type == TOKEN_SEMI) {
-        parser_eat(TAV,parser, TOKEN_SEMI);
-
+    if(!(parser->current_token->type == TOKEN_PRESET_TYPE_MACRO || parser->current_token->type == TOKEN_PRESET_TYPE_SETVAR)) {
+        AST_T* compound = init_ast(AST_COMPOUND);
+        compound->compound_value = calloc(1,sizeof(struct AST_STRUCT));
         AST_T* ast_statement = parser_parse_statement(parser);
 
-        if(ast_statement) {
-            compound->compound_size++;
-            compound->compound_value = realloc(compound->compound_value,compound->compound_size*sizeof(struct AST_STRUCT));
-            compound->compound_value[compound->compound_size-1] = ast_statement;
-        }
-    }
+        compound->compound_value[0] = ast_statement;
+        compound->compound_size++;
 
-    return compound;
+        while(parser->current_token->type == TOKEN_SEMI) {
+            parser_eat(TAV,parser, TOKEN_SEMI);
+
+            AST_T* ast_statement = parser_parse_statement(parser);
+
+            if(ast_statement) {
+                compound->compound_size++;
+                compound->compound_value = realloc(compound->compound_value,compound->compound_size*sizeof(struct AST_STRUCT));
+                compound->compound_value[compound->compound_size-1] = ast_statement;
+            }
+        }
+        return compound;
+    } else {
+        AST_T* compound = init_ast(AST_PREVAR_DEFINITION);
+        compound->compound_value = calloc(1,sizeof(struct AST_STRUCT));
+        AST_T* ast_statement = parser_parse_statement(parser);
+
+        compound->compound_value[0] = ast_statement;
+        compound->compound_size++;
+        
+        if(parser->current_token->type==TOKEN_PRESET_TYPE_MACRO)
+            parser_eat(TAV,parser,TOKEN_PRESET_TYPE_MACRO);
+        if(parser->current_token->type==TOKEN_PRESET_TYPE_SETVAR)
+            parser_eat(TAV,parser,TOKEN_PRESET_TYPE_SETVAR);
+
+        while(parser->current_token->type == TOKEN_SEMI) {
+            parser_eat(TAV,parser, TOKEN_SEMI);
+
+            AST_T* ast_statement = parser_parse_statement(parser);
+
+            if(ast_statement) {
+                compound->compound_size++;
+                compound->compound_value = realloc(compound->compound_value,compound->compound_size*sizeof(struct AST_STRUCT));
+                compound->compound_value[compound->compound_size-1] = ast_statement;
+            }
+        }
+        return compound;
+    }
 }
 AST_T* parser_parse_expr(parser_T* parser) {
     TypeAndValue* TAV = calloc(1,sizeof(TypeAndValue));
-
+    
     switch(parser->current_token->type) {
         case TOKEN_STRING: return parser_parse_string(TAV,parser);
         case TOKEN_ID: return parser_parse_id(parser);
+        case TOKEN_EOF: return parser_parse_PreVarConstDef(TAV,parser); break;
     }
 
     return init_ast(AST_NOOP);
@@ -224,6 +299,19 @@ AST_T* parser_parse_factor(parser_T* parser) {
 }
 AST_T* parser_parse_term(parser_T* parser) {
 
+}
+/* 
+    * Function parser_parse_PreVarConstDef used to stabalize the PreVar definitions
+    * within the language. If we wouldn't do this,
+    * the compiler would not pick up the next token
+    * due to the fact it would be stuck on TOKEN_EOF.
+*/
+parser_T* parser_parse_PreVarConstDef(TypeAndValue* TAV,parser_T* parser) {
+    parser->current_token->type=0;
+
+    parser_parse_expr(parser);
+
+    return parser;
 }
 AST_T* parser_parse_function_call(parser_T* parser) {
     AST_T* function_call = init_ast(AST_FUNCTION_CALL);
@@ -262,7 +350,7 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
         parser_eat(TAV,parser,TOKEN_LSQRBRACK);
     else if(!(parser->current_token->type == TOKEN_LSQRBRACK))
         if(!(parser->current_token->type==TOKEN_TYPE_ANY)) {
-            printf("\n\nERR: Must have '[' and ']' surrounding type other than type Any '~'\n\n");
+            printf("\n\nErr: make needs a [TYPE] param. Example:\nmake [S]sayHi:\"Hi\";\n\n");
             exit(1);
         }
     if(parser->current_token->type==TOKEN_TYPE_STRING) /* = [S] or [s]*/
@@ -337,19 +425,4 @@ AST_T* parser_parse_id(parser_T* parser) {
     }
     else
         return parser_parse_variable(TAV,parser);
-}
-lexer_T* parser_parser_pre_variable(lexer_T* lexer) {
-    TypeAndValue* TAV = calloc(1,sizeof(TypeAndValue));
-    UpdTAV(TAV);
-    parser_T* parser = calloc(1,sizeof(struct PARSER_STRUCT));
-    init_parser(lexer);
-
-    if(lexer->c == '[') {
-        lexer_advance_with_token(lexer,init_token(TOKEN_LSQRBRACK,lexer_get_current_char_as_string(lexer)));
-        if(lexer->c=='S') {
-            lexer_advance_with_token(lexer,init_token(TOKEN_TYPE_STRING,lexer_get_current_char_as_string(lexer)));
-        }
-    }
-
-    return lexer;
 }
