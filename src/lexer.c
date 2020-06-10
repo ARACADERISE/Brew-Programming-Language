@@ -19,6 +19,26 @@ void lexer_advance(lexer_T *lexer) {
 
         lexer->i++;
         lexer->c = lexer->contents[lexer->i];
+
+        if(lexer->c == ':') {
+            lexer->i++;
+            lexer->c = lexer->contents[lexer->i];
+
+            /* Checking whether or not a string starts after the colon. */
+            if(lexer->c != '"') {
+                lexer->i++;
+                lexer->c = lexer->contents[lexer->i];
+                if(lexer->c != '"') {
+                    printf("\n\nErr: The declared variable has no value to to.\nPossible Reasons: 2 or more spaces before double quotes.\n\n");
+                    exit(1);
+                }
+                else {
+                    lexer->i--;
+                }
+            }
+            lexer->i--;
+            lexer->c = lexer->contents[lexer->i];
+        }
                 
     }
 }
@@ -36,15 +56,15 @@ token_T* lexer_get_next_token(lexer_T* lexer) {
 
         if(isalnum(lexer->c)) {
             /* Finding type declarations. Will be inside of square brackets */
-            if(lexer->c == 'S' || lexer->c == 's') {
+            if(lexer->c == 'S') {
                 return lexer_advance_with_token(lexer,init_token(TOKEN_TYPE_STRING,lexer_get_current_char_as_string(lexer)));
             }
-            if(lexer->c == 'I' || lexer->c == 'i')
+            if(lexer->c == 'I')
                 return lexer_advance_with_token(lexer,init_token(TOKEN_TYPE_INT,lexer_get_current_char_as_string(lexer)));
-            if(lexer->c == 'C' || lexer->c == 'c')
+            if(lexer->c == 'C')
                 return lexer_advance_with_token(lexer,init_token(TOKEN_TYPE_CHAR,lexer_get_current_char_as_string(lexer)));
             if(lexer->c=='A')
-                return lexer_advance_with_token(lexer,init_token(TOKEN_TYPE_ANY,lexer_get_current_char_as_string(lexer)));
+                return lexer_advance_with_token(lexer,init_token(TOKEN_TYPE_A,lexer_get_current_char_as_string(lexer)));
             return lexer_collect_id(lexer);
         }
         
@@ -61,21 +81,10 @@ token_T* lexer_get_next_token(lexer_T* lexer) {
             case ')': return lexer_advance_with_token(lexer,init_token(TOKEN_RPARENT,lexer_get_current_char_as_string(lexer))); break;
             case ';': return lexer_advance_with_token(lexer,init_token(TOKEN_SEMI,lexer_get_current_char_as_string(lexer))); break;
             case ',': return lexer_advance_with_token(lexer,init_token(TOKEN_COMMA,lexer_get_current_char_as_string(lexer))); break;
-            /*
-                #> - #define constantName constantVal
-                # - #define MacroName(args) MacroCode.
-
-                As of right now, both are the same.
-            */
-            case '#': {
-                lexer_advance_with_token(lexer,init_token(TOKEN_PRESET,lexer_get_current_char_as_string(lexer)));
-                if(lexer->c == '>') {
-                    return lexer_advance_with_token(lexer,init_token(TOKEN_PRESET_TYPE_SETVAR,lexer_get_current_char_as_string(lexer)));
-                }
-                else
-                    return lexer_advance_with_token(lexer,init_token(TOKEN_PRESET_TYPE_MACRO,lexer_get_current_char_as_string(lexer)));
-                break;
-            }
+            case '{': return lexer_advance_with_token(lexer,init_token(TOKEN_LCURL,lexer_get_current_char_as_string(lexer))); break;
+            case '}': return lexer_advance_with_token(lexer,init_token(TOKEN_RCURL,lexer_get_current_char_as_string(lexer))); break;
+            case '!': return lexer_advance_with_token(lexer,init_token(TOKEN_PREVAR_END_SYMBOL,lexer_get_current_char_as_string(lexer))); break;
+            //case '#': return lexer_advance_with_token(lexer,init_token(TOKEN_PRESET_TYPE_SETVAR,lexer_get_current_char_as_string(lexer))); break;
         }
     }
     return init_token(TOKEN_EOF, "\0");

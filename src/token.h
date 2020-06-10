@@ -10,17 +10,16 @@ typedef struct TOKEN_STRUCT {
         TOKEN_TYPE_STRING,
         TOKEN_TYPE_INT,
         TOKEN_TYPE_CHAR,
-        TOKEN_TYPE_ANY,
+        TOKEN_TYPE_ANY, /* For the make statement */
+        TOKEN_TYPE_A, /* For the make statement */        
         TOKEN_SEMI,
         TOKEN_LSQRBRACK,
         TOKEN_RSQRBRACK,
         TOKEN_LPARENT,
         TOKEN_RPARENT,
-        TOKEN_PRESET, /* 
-            This is just for the lexer when checking if the line is a Constant or Macro. 
-            It makes the return easier.
-        */
-        TOKEN_PRESET_TYPE_MACRO,
+        TOKEN_LCURL, // {
+        TOKEN_RCURL, // }
+        TOKEN_PREVAR_END_SYMBOL,
         TOKEN_PRESET_TYPE_SETVAR,
         TOKEN_USE_KEYWORD, /* To-Do: Give meaning to this */
         TOKEN_EOF,

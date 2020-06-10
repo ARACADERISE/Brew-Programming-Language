@@ -23,8 +23,9 @@ typedef struct PARSER_STRUCT {
 } parser_T;
 
 parser_T* init_parser(lexer_T* lexer);
-parser_T* parser_parse_preVarMacro(parser_T* parser);
-parser_T* parser_parse_preVarConstant(parser_T* parser);
+AST_T* parser_parse_preVarConstant(parser_T* parser);
+AST_T* parser_parse_prevar(TypeAndValue* TAV,parser_T* parser);
+AST_T* parser_parse_preVar_function_call(parser_T* parser);
 parser_T* parser_parse_PreVarConstDef(TypeAndValue* TAV,parser_T* parser);
 void parser_eat(TypeAndValue* TAV,parser_T* parser, int token_type);
 AST_T* parser_parse(parser_T* parser);
