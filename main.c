@@ -7,7 +7,17 @@
 int main(void) {
 
     //lexer_T* lexer = init_lexer("varconst{NAME}:\"Hi\" Print();");
-    lexer_T* lexer = init_lexer("varconst{sayHi}:\"HI\";Print()");
+    lexer_T* lexer = init_lexer(
+        "#HEY\n"
+        "make [I]age: brand age {\nmemalloc(32);\n};\n"
+        //"make [I]age: 15;\n"
+        "print[any]();\n"
+        "varconst{HELLO}: \"HI\";\n"
+        "/*Print is used to print varconst variables*/"
+        "Print();"
+        );
+    /* This will be used for testing the "brand" keyword. */
+    //lexer_T* lexer = init_lexer("varconst{sayHi};");
     token_T* token = (void*)0;
 
     parser_T* parser = init_parser(lexer);

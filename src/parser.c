@@ -1,10 +1,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <ctype.h>
 #include <stdio.h>
 #include "parser.h"
+#include "lexer.h"
 
-static bool IsPre = false;
+//static bool IsPre = false;
+static int BrandNeeded_ = 1;
 
 static inline lexer_T* set_token_back(lexer_T* lexer, int ammount) {
 
@@ -14,18 +17,15 @@ static inline lexer_T* set_token_back(lexer_T* lexer, int ammount) {
     return lexer;
 }
 static inline void PrintErr(parser_T* parser) {
-    printf("\n\nERR: Type of %s is not valid for print declaration. Types S, I, C and ~ are for variable declarations.\n\n",parser->current_token->value);
+    printf("\n\nErr[LINE %d]: Type of %s is not valid for print declaration. Types S, I, C and ~ are for variable declarations.\n\n",parser->lexer->line,parser->current_token->value);
     exit(1);
 }
 static inline TypeAndValue* UpdTAV(TypeAndValue* TAV) {
 
-    if(
-        /*If ForSetup.ValueIndex is nil, all the rest will be nil*/
-        TAV->ForSetup.ValueIndex==(void*)0
-    ) {
-        TAV->ForSetup.ValueIndex=0, TAV->ForSetup.TypeIndex=0;
-        TAV->ForPrint.ValueIndex=0,TAV->ForPrint.TypeIndex=0;  
-    }
+    TAV->ForSetup.ValueIndex=0;
+    TAV->ForSetup.TypeIndex=0;
+    TAV->ForPrint.ValueIndex=0;
+    TAV->ForPrint.TypeIndex=0;
 
     return TAV;
 }
@@ -49,13 +49,14 @@ void parser_eat(TypeAndValue* TAV,parser_T* parser, int token_type) {
         parser->current_token = lexer_get_next_token(parser->lexer);
 
         if(parser->current_token->type==TOKEN_RSQRBRACK) {
-            printf("\n\nErr: right square bracket(']') found but not left square bracket('[').\n\n");
+            printf("\n\nErr[LINE %d]: right square bracket(']') found but not left square bracket('[').\n\n",parser->lexer->line);
             exit(1);
         }
         if(parser->current_token->type==TOKEN_LSQRBRACK) {
             parser->current_token = lexer_get_next_token(parser->lexer);
+            lexer_collect_print_type(parser->lexer, parser->current_token->value);
         } else {
-            printf("\n\nERR: missing left square bracket('[') for print statement.\n\n");
+            printf("\n\nERR[LINE %d]: missing left square bracket('[') for print statement.\n\n",parser->lexer->line);
             exit(1);
         }
 
@@ -64,73 +65,6 @@ void parser_eat(TypeAndValue* TAV,parser_T* parser, int token_type) {
             * type Str:String, Char:Char, Int:Integer or empty square brackets 
             for print type any 
         */
-        
-        // Getting type. Cannot be just S, I or C
-        char type[12];
-        if(strcmp(parser->current_token->value,"S")==0||strcmp(parser->current_token->value,"s")==0) {
-            type[0]=parser->current_token->value[0];
-            parser->current_token = lexer_get_next_token(parser->lexer);
-            type[1]=parser->current_token->value[0];
-            set_token_back(parser->lexer,2);
-        }
-        if(strcmp(parser->current_token->value,"I")==0||strcmp(parser->current_token->value,"i")==0) {
-            type[0]=parser->current_token->value[0];
-            parser->current_token = lexer_get_next_token(parser->lexer);
-            type[1]=parser->current_token->value[0];
-            set_token_back(parser->lexer,2);
-        }
-        if(strcmp(parser->current_token->value,"C")==0||strcmp(parser->current_token->value,"c")==0) {
-            type[0]=parser->current_token->value[0];
-            parser->current_token = lexer_get_next_token(parser->lexer);
-            type[1]=parser->current_token->value[0];
-            set_token_back(parser->lexer,2);
-        }
-
-        if(strcmp(type,"St")==0||strcmp(type,"st")==0) {
-            printf("String ~ ");
-            strcpy(TAV->ForPrint.Type[TAV->ForPrint.TypeIndex],parser->current_token->value);
-            parser->current_token = lexer_get_next_token(parser->lexer);
-        } else if(strcmp(type,"In")==0||strcmp(type,"in")==0) {
-            printf("Integer ~ ");
-            strcpy(TAV->ForPrint.Type[TAV->ForPrint.TypeIndex],parser->current_token->value);
-            parser->current_token = lexer_get_next_token(parser->lexer);
-        } else if(strcmp(type,"Ch")==0||strcmp(type,"ch")==0) {
-            printf("Character ~ ");
-            strcpy(TAV->ForPrint.Type[TAV->ForPrint.TypeIndex],parser->current_token->value);
-            parser->current_token = lexer_get_next_token(parser->lexer);
-        } else {
-            
-            if(parser->current_token->type!=TOKEN_RSQRBRACK) {
-                if(parser->current_token->type==TOKEN_LPARENT) {
-                    printf("\n\nErr: Found only one set square brackets. Need 2, '[' and ']'. Missing ']'.\n\n");
-                    exit(1);
-                }
-                else
-                    printf("\n\nErr: The type '%s' is not valid.\nHint: If you don't want to print a certain type, leave the [TYPE] empty.\n\n",parser->current_token->value);
-                exit(1);
-            }
-            //parser->current_token = lexer_get_next_token(parser->lexer);
-
-            printf("Any ~ ");
-            /*
-                *****************************
-                * No need to get the new    *
-                * token, there is no type   *
-                * found, therefore we would *
-                * be getting the token of ] *
-                * which would mess up the   *
-                *     application.          *
-                ***************************
-
-                Setting the current_token's type to zero so we don't run into undefined token error.
-            */
-            strcpy(TAV->ForPrint.Type[TAV->ForPrint.TypeIndex],"Any");
-            parser->current_token->type=0;
-        }
-        if(parser->current_token->type==TOKEN_RSQRBRACK) {
-            //parser->prev_token = parser->current_token;
-            parser->current_token = lexer_get_next_token(parser->lexer);
-        }
     }
 
     if(parser->current_token->type==TOKEN_PRESET_TYPE_SETVAR){
@@ -143,7 +77,7 @@ void parser_eat(TypeAndValue* TAV,parser_T* parser, int token_type) {
             }
             parser->current_token = lexer_get_next_token(parser->lexer);
         } else {
-            printf("Unexpected token '%s' with type %d",parser->current_token->value,parser->current_token->type);
+            printf("\n\nErr[LINE %d]:Unexpected token '%s' with type %d\n\n",parser->lexer->line,parser->current_token->value,parser->current_token->type);
             exit(1);
         }
     }
@@ -172,27 +106,95 @@ AST_T* parser_parse_statement(parser_T* parser) {
 
     return init_ast(AST_NOOP);
 }
+AST_T* parser_parse_memalloc_function_call(TypeAndValue* TAV,AST_T* var_def, parser_T* parser) {
+
+    var_def->bits_to_assign = lexer_get_bit_assignment(parser->lexer);
+
+    if(parser->current_token->type==TOKEN_LPARENT)
+        parser_eat(TAV,parser,TOKEN_LPARENT);
+    else {
+        printf("\n\nErr[LINE %d]: Missing '(' for %s function.\n\n",parser->lexer->line,var_def->_func_name);
+        exit(1);
+    }
+    if(parser->current_token->type==TOKEN_RPARENT)
+        parser_eat(TAV,parser,TOKEN_RPARENT);
+    else {
+        printf("\n\nErr[LINE %d]: Missing ')' for %s function.\n\n",parser->lexer->line,var_def->_func_name);
+        exit(1);
+    }
+    if(parser->current_token->type==TOKEN_SEMI)
+        parser_eat(TAV,parser,TOKEN_SEMI);
+    else {
+        printf("\n\nErr[LINE %d]: Function %s ends abruptly without ';' or '!'.\n\n",parser->lexer->line,var_def->_func_name);
+        exit(1);
+    }
+
+    return var_def;
+}
+AST_T* parser_parse_brand_variable(TypeAndValue* TAV,parser_T* parser,char* variable_definition_variable_name) {
+    if(BrandNeeded_==0) {
+        if(!(strcmp(parser->current_token->value,"brand")==0)) {
+            printf("\n\nErr[LINE %d]: Variable %s needs to be branded with the 'brand' keyword.\n\n",parser->lexer->line,variable_definition_variable_name);
+            exit(1);
+        } else {
+            token_T* token = init_token(TOKEN_BRAND,"brand");
+            parser_eat(TAV, parser, TOKEN_ID);
+            if(strcmp(parser->current_token->value,variable_definition_variable_name)==0) {
+                parser_eat(TAV, parser, TOKEN_ID);
+                if(parser->current_token->type==TOKEN_LCURL) {
+                    parser_eat(TAV, parser, TOKEN_LCURL);
+                } else {
+                    printf("\n\nErr[LINE %d]: Expecting left curly brace('{'), got %s\n\n",parser->lexer->line,parser->current_token->value);
+                    exit(1);
+                }
+                char* mem_allocation_function_name = parser->current_token->value;
+                parser_eat(TAV,parser, TOKEN_ID);
+                
+                AST_T* variable_definition = init_ast(AST_MEMALLOC_FUNCTION_CALL);
+                variable_definition->brand_var_name = variable_definition_variable_name;
+                variable_definition->_func_name = mem_allocation_function_name;
+
+                if(strcmp(mem_allocation_function_name,"memalloc")==0)
+                    parser_parse_memalloc_function_call(TAV,variable_definition,parser);
+                
+                if(parser->current_token->type==TOKEN_RCURL)
+                    parser_eat(TAV,parser,TOKEN_RCURL);
+                else {
+                    printf("\n\nErr[LINE %d]: Missing closing curly brace('}').\n\n",parser->lexer->line);
+                    exit(1);
+                }
+
+                return variable_definition;
+            } else {
+                printf("\n\nErr[LINE %d]: Cannot brand %s as variable %s\n\n",parser->lexer->line,parser->current_token->value,variable_definition_variable_name);
+                exit(1);
+            }
+        }
+    }
+    return init_ast(AST_NOOP);
+}
 AST_T* parser_parse_preVarConstant(parser_T* parser) {
     TypeAndValue* TAV = calloc(1,sizeof(TypeAndValue));
     UpdTAV(TAV);
+    strcpy(parser->lexer->type,"Any");
 
     parser_eat(TAV,parser, TOKEN_ID);
 
     if(parser->current_token->type==TOKEN_RCURL) {
-        printf("\n\nErr: Found ('}'), but not ('{').\n\n");
+        printf("\n\nErr[LINE %d]: Found ('}'), but not ('{').\n\n",parser->lexer->line);
         exit(1);
     }
 
     if(parser->current_token->type==TOKEN_LCURL)
         parser_eat(TAV,parser,TOKEN_LCURL);
     else {
-        printf("\n\nErr: syntax of varconst is incorrect. Needs '{' to start declaration, found %s\n\n",parser->current_token->value);
+        printf("\n\nErr[LINE %d]: syntax of varconst is incorrect. Needs '{' to start declaration, found %s\n\n",parser->lexer->line,parser->current_token->value);
         exit(1);
     }
 
     if(parser->current_token->type == TOKEN_LSQRBRACK) {
         parser_eat(TAV,parser,TOKEN_LSQRBRACK);
-        printf("\n\n\033[1;35mWarning:\033[0m varconst does not require the [TYPE] param.\n\033[1;35mWarning:\033[0m The [TYPE] param might cause the varconst variable to be more prone to outcome errors.\n\n");
+        printf("\n\n\033[1;35mWarning[LINE %d]:\033[0m varconst does not require the [TYPE] param.\n\033[1;35mWarning:\033[0m The [TYPE] param might cause the varconst variable to be more prone to outcome errors.\n\n",parser->lexer->line);
         if(!(
             parser->current_token->type==TOKEN_TYPE_STRING||
             parser->current_token->type==TOKEN_TYPE_INT||
@@ -201,7 +203,7 @@ AST_T* parser_parse_preVarConstant(parser_T* parser) {
             parser->current_token->type==TOKEN_TYPE_A
         )) {
             if(!(parser->current_token->type==TOKEN_RSQRBRACK)) {
-                printf("\n\nErr: Missing right square bracket(']') for variable declaration.\n\n");
+                printf("\n\nErr[LINE %d]: Missing right square bracket(']') for variable declaration.\n\n",parser->lexer->line);
                 exit(1);
             }
         }
@@ -209,21 +211,23 @@ AST_T* parser_parse_preVarConstant(parser_T* parser) {
             parser_eat(TAV,parser,TOKEN_TYPE_STRING);
         else if(parser->current_token->type==TOKEN_TYPE_INT) /* = [I]*/
             parser_eat(TAV,parser,TOKEN_TYPE_INT);
-        else if(parser->current_token->type==TOKEN_TYPE_CHAR) /* = [C]*/
+        else if(parser->current_token->type==TOKEN_TYPE_CHAR) /* = [C]*/ {
             parser_eat(TAV,parser,TOKEN_TYPE_CHAR);
-        else if(parser->current_token->type==TOKEN_TYPE_ANY) /* = ~*/ {
+            strcpy(TAV->ForSetup.Type[TAV->ForSetup.TypeIndex],"Char");
+        }
+        else if(parser->current_token->type==TOKEN_TYPE_ANY) /* = ~ or [~]*/ {
             strcpy(TAV->ForSetup.Type[TAV->ForSetup.TypeIndex],"Any");
             parser_eat(TAV,parser,TOKEN_TYPE_ANY);
         }
-        else if(parser->current_token->type == TOKEN_TYPE_A) {
+        else if(parser->current_token->type == TOKEN_TYPE_A)/* = [A]*/ {
             parser_eat(TAV,parser,TOKEN_TYPE_A);
         }
         else {
-            printf("\n\nErr: [TYPE] param is empty.\nThe [TYPE] param needs a type of S(STRING) I(INTEGER) C(CHAR) A(ANY), it cannot be left empty.\n\n");
+            printf("\n\nErr[LINE %d]: [TYPE] param is empty.\nThe [TYPE] param needs a type of S(STRING) I(INTEGER) C(CHAR) A(ANY), it cannot be left empty.\n\n",parser->lexer->line);
             exit(1);
         }
         if(!(parser->current_token->type==TOKEN_RSQRBRACK)) {
-            printf("\nErr: [TYPE] param added by user is missing closing square bracket(']').\n\n");
+            printf("\nErr[LINE %d]: [TYPE] param added by user is missing closing square bracket(']').\n\n",parser->lexer->line);
             exit(1);
         }
         else
@@ -234,28 +238,33 @@ AST_T* parser_parse_preVarConstant(parser_T* parser) {
             printf("\n\nErr: [TYPE] param added by user left empty.\nNeeds a specific type. Example:\nvarconst{[S]sayHi}:\"Hi\";\n\n");
             exit(1);
         }*/
+    
     char* variable_definition_variable_name = parser->current_token->value;
     parser_eat(TAV,parser,TOKEN_ID);
     if(parser->current_token->type == TOKEN_RCURL)
         parser_eat(TAV,parser, TOKEN_RCURL);
     else {
-        printf("\nErr: varconst needs closing curly brace('}').\n\n");
+        printf("\nErr[LINE %d]: varconst needs closing curly brace('}').\n\n",parser->lexer->line);
         exit(1);
     }
 
     if(parser->current_token->type==TOKEN_COLON)
         parser_eat(TAV,parser, TOKEN_COLON);
     else {
-        printf("\n\nErr: Unable to find ':'.\n\n");
+        printf("\n\nErr[LINE %d]: Unable to find ':'.\n\n",parser->lexer->line);
         exit(1);
     }
-
+    
+    if(strcmp(parser->current_token->value,"brand")==0) {
+        printf("\n\nErr[LINE %d]: Cannot brand a constant('varconst'). Must have value assignment.\n\n",parser->lexer->line);
+        exit(1);
+    }
+    
     AST_T* variable_definition_value = parser_parse_expr(parser);
     AST_T* variable_definition = init_ast(AST_PREVAR_DEFINITION);
 
     variable_definition->variable_definition_variable_name = variable_definition_variable_name;
     variable_definition->variable_definition_value = variable_definition_value;
-
     return variable_definition;
 }
 AST_T* parser_parse_statements(TypeAndValue* TAV,parser_T* parser) {
@@ -268,8 +277,11 @@ AST_T* parser_parse_statements(TypeAndValue* TAV,parser_T* parser) {
         compound->compound_value[0] = ast_statement;
         compound->compound_size++;
 
-        while(parser->current_token->type == TOKEN_SEMI) {
-            parser_eat(TAV,parser, TOKEN_SEMI);
+        while(parser->current_token->type == TOKEN_SEMI||parser->current_token->type == TOKEN_PREVAR_END_SYMBOL) {
+            if(parser->current_token->type == TOKEN_PREVAR_END_SYMBOL)
+                parser_eat(TAV,parser, TOKEN_PREVAR_END_SYMBOL);
+            else
+                parser_eat(TAV,parser, TOKEN_SEMI);
 
             AST_T* ast_statement = parser_parse_statement(parser);
 
@@ -365,7 +377,7 @@ AST_T* parser_parse_preVar_function_call(parser_T* parser) {
 
     return function_call;
 
-    return function_call;
+    //return function_call;
 }
 AST_T* parser_parse_function_call(parser_T* parser) {
     AST_T* function_call = init_ast(AST_FUNCTION_CALL);
@@ -405,7 +417,7 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
     parser_eat(TAV,parser, TOKEN_ID);
 
     if(parser->current_token->type==TOKEN_RSQRBRACK) {
-        printf("\n\nErr: Found right square bracket(']'), but not the left square bracket('[').\n\n");
+        printf("\n\nErr[LINE %d]: Found right square bracket(']'), but not the left square bracket('[').\n\n",parser->lexer->line);
         exit(1);
     }
 
@@ -416,17 +428,18 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
             parser->current_token->type==TOKEN_TYPE_INT||
             parser->current_token->type==TOKEN_TYPE_CHAR||
             parser->current_token->type==TOKEN_TYPE_ANY||
-            parser->current_token->type==TOKEN_TYPE_A
+            parser->current_token->type==TOKEN_TYPE_A||
+            parser->current_token->type==TOKEN_NO_VALUE
         )) {
             if(!(parser->current_token->type==TOKEN_RSQRBRACK)) {
-                printf("\n\nErr: Missing right square bracket(']') for variable declaration.\n\n");
+                printf("\n\nErr[LINE %d]: Missing right square bracket(']') for [TYPE] param.\n\n",parser->lexer->line);
                 exit(1);
             }
         }
     }
     else if(!(parser->current_token->type == TOKEN_LSQRBRACK))
         if(!(parser->current_token->type==TOKEN_TYPE_ANY)) {
-            printf("\n\nErr: make needs a [TYPE] param. Example:\nmake [S]sayHi:\"Hi\";\n\n");
+            printf("\n\nErr[LINE %d]: Missing left square bracket('[') for [TYPE] param. Example of [TYPE] param:\nmake [S]sayHi:\"Hello World\";\n\n",parser->lexer->line);
             exit(1);
         }
     if(parser->current_token->type==TOKEN_TYPE_STRING) /* = [S]*/
@@ -436,28 +449,38 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
     else if(parser->current_token->type==TOKEN_TYPE_CHAR) /* = [C]*/
         parser_eat(TAV,parser,TOKEN_TYPE_CHAR);
     else if(parser->current_token->type==TOKEN_TYPE_ANY) /* = ~*/ {
-        strcpy(TAV->ForSetup.Type[TAV->ForSetup.TypeIndex],"Any");
         parser_eat(TAV,parser,TOKEN_TYPE_ANY);
     }
-    else if(parser->current_token->type == TOKEN_TYPE_A) {
+    else if(parser->current_token->type == TOKEN_TYPE_A)
         parser_eat(TAV,parser,TOKEN_TYPE_A);
-    }
+    else if(parser->current_token->type == TOKEN_NO_VALUE)
+        parser_eat(TAV,parser, TOKEN_NO_VALUE);
     else {
-        printf("\n\nErr: make [TYPE] param is empty.\nThe [TYPE] param needs a type of S(STRING) I(INTEGER) C(CHAR) A(ANY), it cannot be left empty.\n\n");
+        printf("\n\nErr[LINE %d]: make [TYPE] param is empty.\nThe [TYPE] param needs a type of S(STRING) I(INTEGER) C(CHAR) A(ANY), it cannot be left empty.\n\n",parser->lexer->line);
         exit(1);
     }
         
     if(parser->current_token->type == TOKEN_RSQRBRACK)
         parser_eat(TAV,parser, TOKEN_RSQRBRACK);
+    else {
+        printf("\n\nErr[LINE %d]: Missing right square bracket(']') for [TYPE] param.\n\n",parser->lexer->line);
+        exit(1);
+    }
     char* variable_definition_variable_name = parser->current_token->value;
     parser_eat(TAV,parser, TOKEN_ID);
     if(parser->current_token->type==TOKEN_COLON)
         parser_eat(TAV,parser, TOKEN_COLON);
     else {
-        printf("\n\nErr: Unable to find ':'.\n\n");
-        exit(1);
+        if(parser->current_token->type==TOKEN_SEMI)
+            BrandNeeded_=0;
+        else {
+            printf("\n\nErr[LINE %d]: Unable to find ':'.\n\n",parser->lexer->line);
+            exit(1);
+        }
     }
-     
+
+    if(BrandNeeded_==0)
+        parser_parse_brand_variable(TAV,parser,variable_definition_variable_name);
     
     AST_T* variable_definition_value = parser_parse_expr(parser);
     AST_T* variable_definition = init_ast(AST_VARIABLE_DEFINITION);
@@ -508,8 +531,9 @@ AST_T* parser_parse_variable(TypeAndValue* TAV,parser_T* parser) {
     char* token_value = parser->current_token->value;
     parser_eat(TAV,parser, TOKEN_ID);
 
-    if(parser->current_token->type == TOKEN_LPARENT)
+    if(parser->current_token->type == TOKEN_LPARENT) {
         return parser_parse_function_call(parser);
+    }
     
     AST_T* ast_variable = init_ast(AST_VARIABLE);
     ast_variable->variable_name = token_value;
@@ -520,7 +544,7 @@ AST_T* parser_parse_string(TypeAndValue* TAV,parser_T* parser) {
     if(parser->current_token->type==TOKEN_SEMI)
         parser_eat(TAV, parser, TOKEN_SEMI);
 
-    if(!(IsPre)) {
+    //if(!(IsPre)) {
         AST_T* ast_string = init_ast(AST_STRING);
         ast_string->string_value = parser->current_token->value;
 
@@ -530,8 +554,8 @@ AST_T* parser_parse_string(TypeAndValue* TAV,parser_T* parser) {
         TAV->ForPrint.ValueIndex++;
         parser_eat(TAV,parser, TOKEN_STRING);
         return ast_string;
-    }
-    else {
+    //}
+    /*else {
         AST_T* ast_string = init_ast(AST_STRING);
         ast_string->string_value = parser->current_token->value;
 
@@ -541,7 +565,7 @@ AST_T* parser_parse_string(TypeAndValue* TAV,parser_T* parser) {
         TAV->ForPrint.ValueIndex++;
         parser_eat(TAV,parser, TOKEN_STRING);
         return ast_string;
-    }
+    }*/
 
     return init_ast(AST_NOOP);
 }

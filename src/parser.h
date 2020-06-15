@@ -40,6 +40,5 @@ AST_T* parser_parse_variable_definition(parser_T* parser);
 AST_T* parser_parse_variable(TypeAndValue* TAV,parser_T* parser);
 AST_T* parser_parse_string(TypeAndValue* TAV,parser_T* parser);
 AST_T* parser_parse_id(parser_T* parser);
-lexer_T* parser_parser_pre_variable(lexer_T* lexer);
 
 #endif

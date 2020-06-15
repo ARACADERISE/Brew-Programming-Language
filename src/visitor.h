@@ -8,6 +8,7 @@ typedef struct VISITOR_STRUCT {
     size_t variable_definitions_size;
 } visitor_T;
 
+AST_T* visitor_visit_memalloc_function_call(AST_T* node);
 visitor_T* init_visitor();
 AST_T* visitor_visit_prevar_definition(AST_T* node);
 AST_T* visitor_visit_prevar_function_call(AST_T* node);

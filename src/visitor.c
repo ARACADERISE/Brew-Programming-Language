@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include "visitor.h"
 
@@ -6,6 +7,7 @@ AST_T* visitor_visit(AST_T* node) {
     //printf("%d:",node->type);
     switch(node->type) {
         case AST_PREVAR_DEFINITION: return visitor_visit_prevar_definition(node);break;
+        //case AST_MEMALLOC_FUNCTION_CALL: return visitor_visit_memalloc_function_call(node);break;
         case AST_VARIABLE_DEFINITION: return visitor_visit_variable_definition(node);break;
         case AST_PREVAR: return 0;break;
         case AST_VARIABLE: return visitor_visit_variable(node);break;
@@ -21,16 +23,25 @@ AST_T* visitor_visit(AST_T* node) {
 
     return init_ast(AST_NOOP);
 }
+AST_T* visitor_visit_memalloc_function_call(AST_T* node) {
+    printf("ALLOCATING MEMORY!\n");
+    return 0;
+}
 AST_T* visitor_visit_prevar_definition(AST_T* node) {
-    printf("VISIT HERE\n");
+    printf("VARCONST DECLARED\n");
 }
 AST_T* visitor_visit_prevar_function_call(AST_T* node) {
-    printf("HERE\n");
+    printf("Print FUNCTION CALLED\n");
 }
 AST_T* visitor_visit_variable_definition(AST_T* node) {
+    printf("make VARIABLE DECLARED\n");
+    printf("%s",node->brand_var_name);
+    if(!(node->brand_var_name==(void*)0)) {
+        visitor_visit_memalloc_function_call(node);
+    }
 }
 AST_T* visitor_visit_function_call(AST_T* node) {
-    printf("STILL VISITS");
+    printf("print[]() FUNCTION CALLED\n");
 }
 AST_T* visitor_visit_variable(AST_T* node) {
 }

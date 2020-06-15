@@ -1,11 +1,13 @@
 #ifndef AST_H
 #define AST_H
 #include <stdlib.h>
+#include <stdbool.h>
 
 typedef struct AST_STRUCT {
     enum {
         AST_VARIABLE_DEFINITION,
         AST_PREVAR_DEFINITION,
+        AST_MEMALLOC_FUNCTION_CALL,
         AST_VARIABLE,
         AST_PREVAR,
         AST_FUNCTION_CALL,
@@ -22,6 +24,14 @@ typedef struct AST_STRUCT {
     /* For AST_PREVAR_DEFINITION */
     char* PreVar_name;
     struct AST_STRUCT* PreVar_value;
+
+    /* For brand keyword */
+    char* brand_var_name;
+    char* _func_name;
+    int is_allocated; /*
+        0 - allocated, 1 - not allocated
+    */
+    size_t bits_to_assign;
 
     /* For AST_VARIABLE */
     char* variable_name;
