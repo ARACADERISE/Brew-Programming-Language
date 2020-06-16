@@ -10,11 +10,8 @@ int main(void) {
     lexer_T* lexer = init_lexer(
         "#HEY\n"
         "make [I]age: brand age {\nmemalloc(32);\n};\n"
-        //"make [I]age: 15;\n"
-        "print[any]();\n"
-        "varconst{HELLO}: \"HI\";\n"
-        "/*Print is used to print varconst variables*/"
-        "Print();"
+        "make [I]age: 15;\n"
+        "make [I]ageT: brand ageT {\nmemalloc(36);\n};\n"
         );
     /* This will be used for testing the "brand" keyword. */
     //lexer_T* lexer = init_lexer("varconst{sayHi};");

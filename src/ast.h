@@ -25,12 +25,9 @@ typedef struct AST_STRUCT {
     char* PreVar_name;
     struct AST_STRUCT* PreVar_value;
 
-    /* For brand keyword */
+    /* For Brand. */
     char* brand_var_name;
     char* _func_name;
-    int is_allocated; /*
-        0 - allocated, 1 - not allocated
-    */
     size_t bits_to_assign;
 
     /* For AST_VARIABLE */

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include "parser.h"
 #include "visitor.h"
 
 AST_T* visitor_visit(AST_T* node) {
@@ -24,8 +25,7 @@ AST_T* visitor_visit(AST_T* node) {
     return init_ast(AST_NOOP);
 }
 AST_T* visitor_visit_memalloc_function_call(AST_T* node) {
-    printf("ALLOCATING MEMORY!\n");
-    return 0;
+    printf("brand variable %s with %ld bits -> %s\n",node->brand_var_name,node->bits_to_assign,node->_func_name);
 }
 AST_T* visitor_visit_prevar_definition(AST_T* node) {
     printf("VARCONST DECLARED\n");
@@ -35,10 +35,6 @@ AST_T* visitor_visit_prevar_function_call(AST_T* node) {
 }
 AST_T* visitor_visit_variable_definition(AST_T* node) {
     printf("make VARIABLE DECLARED\n");
-    printf("%s",node->brand_var_name);
-    if(!(node->brand_var_name==(void*)0)) {
-        visitor_visit_memalloc_function_call(node);
-    }
 }
 AST_T* visitor_visit_function_call(AST_T* node) {
     printf("print[]() FUNCTION CALLED\n");

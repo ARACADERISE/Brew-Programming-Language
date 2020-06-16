@@ -4,10 +4,11 @@
 #include <ctype.h>
 #include <stdio.h>
 #include "parser.h"
+#include "visitor.h"
 #include "lexer.h"
 
 //static bool IsPre = false;
-static int BrandNeeded_ = 1;
+int BrandNeeded_ = 1;
 
 static inline lexer_T* set_token_back(lexer_T* lexer, int ammount) {
 
@@ -106,69 +107,56 @@ AST_T* parser_parse_statement(parser_T* parser) {
 
     return init_ast(AST_NOOP);
 }
-AST_T* parser_parse_memalloc_function_call(TypeAndValue* TAV,AST_T* var_def, parser_T* parser) {
+AST_T* parser_parse_memalloc_function_call(TypeAndValue* TAV, parser_T* parser, char* b_v_n) {
+    AST_T* brand_var = init_ast(AST_MEMALLOC_FUNCTION_CALL);
+    brand_var->bits_to_assign = lexer_get_bit_assignment(parser->lexer);
+    brand_var->brand_var_name = b_v_n;
+    brand_var->_func_name = "memalloc";
 
-    var_def->bits_to_assign = lexer_get_bit_assignment(parser->lexer);
+    parser_eat(TAV,parser,TOKEN_LPARENT);
 
-    if(parser->current_token->type==TOKEN_LPARENT)
-        parser_eat(TAV,parser,TOKEN_LPARENT);
-    else {
-        printf("\n\nErr[LINE %d]: Missing '(' for %s function.\n\n",parser->lexer->line,var_def->_func_name);
-        exit(1);
-    }
     if(parser->current_token->type==TOKEN_RPARENT)
         parser_eat(TAV,parser,TOKEN_RPARENT);
     else {
-        printf("\n\nErr[LINE %d]: Missing ')' for %s function.\n\n",parser->lexer->line,var_def->_func_name);
+        printf("\n\nErr[LINE %d]: Missing ')'.\n\n",parser->lexer->line);
         exit(1);
     }
     if(parser->current_token->type==TOKEN_SEMI)
         parser_eat(TAV,parser,TOKEN_SEMI);
     else {
-        printf("\n\nErr[LINE %d]: Function %s ends abruptly without ';' or '!'.\n\n",parser->lexer->line,var_def->_func_name);
+        printf("\n\nErr[LINE %d]: Abrupt end to function call.\n\n",parser->lexer->line);
+        exit(1);
+    }
+    if(parser->current_token->type==TOKEN_RCURL)
+        parser_eat(TAV,parser,TOKEN_RCURL);
+    else {
+        printf("\n\nErr[LINE %d]: Missing '}'.\n\n",parser->lexer->line);
         exit(1);
     }
 
-    return var_def;
+    /* Needs to be done here, or else the visitor would never visit. */
+    return visitor_visit_memalloc_function_call(brand_var);
 }
 AST_T* parser_parse_brand_variable(TypeAndValue* TAV,parser_T* parser,char* variable_definition_variable_name) {
     if(BrandNeeded_==0) {
-        if(!(strcmp(parser->current_token->value,"brand")==0)) {
-            printf("\n\nErr[LINE %d]: Variable %s needs to be branded with the 'brand' keyword.\n\n",parser->lexer->line,variable_definition_variable_name);
-            exit(1);
-        } else {
-            token_T* token = init_token(TOKEN_BRAND,"brand");
-            parser_eat(TAV, parser, TOKEN_ID);
-            if(strcmp(parser->current_token->value,variable_definition_variable_name)==0) {
-                parser_eat(TAV, parser, TOKEN_ID);
-                if(parser->current_token->type==TOKEN_LCURL) {
-                    parser_eat(TAV, parser, TOKEN_LCURL);
-                } else {
-                    printf("\n\nErr[LINE %d]: Expecting left curly brace('{'), got %s\n\n",parser->lexer->line,parser->current_token->value);
-                    exit(1);
-                }
-                char* mem_allocation_function_name = parser->current_token->value;
-                parser_eat(TAV,parser, TOKEN_ID);
-                
-                AST_T* variable_definition = init_ast(AST_MEMALLOC_FUNCTION_CALL);
-                variable_definition->brand_var_name = variable_definition_variable_name;
-                variable_definition->_func_name = mem_allocation_function_name;
-
-                if(strcmp(mem_allocation_function_name,"memalloc")==0)
-                    parser_parse_memalloc_function_call(TAV,variable_definition,parser);
-                
-                if(parser->current_token->type==TOKEN_RCURL)
-                    parser_eat(TAV,parser,TOKEN_RCURL);
-                else {
-                    printf("\n\nErr[LINE %d]: Missing closing curly brace('}').\n\n",parser->lexer->line);
-                    exit(1);
-                }
-
-                return variable_definition;
-            } else {
-                printf("\n\nErr[LINE %d]: Cannot brand %s as variable %s\n\n",parser->lexer->line,parser->current_token->value,variable_definition_variable_name);
+        parser_eat(TAV,parser,TOKEN_ID);
+        char* brand_var_name = parser->current_token->value;
+        parser_eat(TAV,parser,TOKEN_ID);
+        
+        if(strcmp(brand_var_name,variable_definition_variable_name)==0) {
+            if(parser->current_token->type==TOKEN_LCURL)
+                parser_eat(TAV,parser,TOKEN_LCURL);
+            else {
+                printf("\n\nErr[LINE %d]: Missing '{'.\n\n",parser->lexer->line);
                 exit(1);
             }
+            
+            char* mem_function_name = parser->current_token->value;
+            parser_eat(TAV,parser,TOKEN_ID);
+            
+            BrandNeeded_=1;
+            if(strcmp(mem_function_name,"memalloc")==0)
+                return parser_parse_memalloc_function_call(TAV,parser,brand_var_name);
         }
     }
     return init_ast(AST_NOOP);
@@ -479,14 +467,18 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
         }
     }
 
-    if(BrandNeeded_==0)
-        parser_parse_brand_variable(TAV,parser,variable_definition_variable_name);
-    
-    AST_T* variable_definition_value = parser_parse_expr(parser);
+
     AST_T* variable_definition = init_ast(AST_VARIABLE_DEFINITION);
 
+    if(BrandNeeded_==0||strcmp(parser->current_token->value,"brand")==0) {
+        BrandNeeded_=0;
+        parser_parse_brand_variable(TAV,parser,variable_definition_variable_name);
+    } else {
+        AST_T* variable_definition_value = parser_parse_expr(parser);
+        variable_definition->variable_definition_value = variable_definition_value;
+    }
+
     variable_definition->variable_definition_variable_name = variable_definition_variable_name;
-    variable_definition->variable_definition_value = variable_definition_value;
 
     return variable_definition;
 }

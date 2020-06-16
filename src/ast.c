@@ -12,9 +12,10 @@ AST_T* init_ast(int type) {
     ast->PreVar_name = (void*)0;
     ast->PreVar_value = (void*)9;
 
-    if(type==AST_MEMALLOC_FUNCTION_CALL) {
-        printf("YES");
-    }
+    /* For brand keyword */
+    ast->brand_var_name = (void*)0;
+    ast->_func_name = (void*)0;
+    ast->bits_to_assign = 0;
 
     /* For AST_VARIABLE */
     ast->variable_name = (void*)0;

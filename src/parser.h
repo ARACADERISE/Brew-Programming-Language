@@ -3,6 +3,8 @@
 #include "lexer.h"
 #include "ast.h"
 
+extern int BrandNeeded_;
+
 typedef struct {
     struct{
         int ValueIndex,TypeIndex;
