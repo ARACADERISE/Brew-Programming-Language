@@ -27,7 +27,7 @@ typedef struct PARSER_STRUCT {
 parser_T* init_parser(lexer_T* lexer);
 AST_T* parser_parse_preVarConstant(parser_T* parser);
 AST_T* parser_parse_prevar(TypeAndValue* TAV,parser_T* parser);
-AST_T* parser_parse_preVar_function_call(parser_T* parser);
+AST_T* parser_parse_preVar_function_call(char* function_name,parser_T* parser);
 parser_T* parser_parse_PreVarConstDef(TypeAndValue* TAV,parser_T* parser);
 void parser_eat(TypeAndValue* TAV,parser_T* parser, int token_type);
 AST_T* parser_parse(parser_T* parser);
@@ -37,10 +37,11 @@ AST_T* parser_parse_statements(TypeAndValue* TAV,parser_T* parser);
 AST_T* parser_parse_expr(parser_T* parser);
 AST_T* parser_parse_factor(parser_T* parser);
 AST_T* parser_parse_term(parser_T* parser);
-AST_T* parser_parse_function_call(parser_T* parser);
+AST_T* parser_parse_function_call(char* function_name,parser_T* parser);
 AST_T* parser_parse_variable_definition(parser_T* parser);
 AST_T* parser_parse_variable(TypeAndValue* TAV,parser_T* parser);
 AST_T* parser_parse_string(TypeAndValue* TAV,parser_T* parser);
+AST_T* parser_parse_int(TypeAndValue* TAV, parser_T* parser);
 AST_T* parser_parse_id(parser_T* parser);
 
 #endif

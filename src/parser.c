@@ -9,6 +9,8 @@
 
 //static bool IsPre = false;
 int BrandNeeded_ = 1;
+static int isSigned=1; // false by default
+static int isUnsigned=0; // true by default
 
 static inline lexer_T* set_token_back(lexer_T* lexer, int ammount) {
 
@@ -105,7 +107,9 @@ AST_T* parser_parse_statement(parser_T* parser) {
         return parser_parse_id(parser);
     }*/
 
-    return init_ast(AST_NOOP);
+    AST_T* noop = init_ast(AST_NOOP);
+    noop->total_lines = parser->lexer->line;
+    return noop;
 }
 AST_T* parser_parse_memalloc_function_call(TypeAndValue* TAV, parser_T* parser, char* b_v_n) {
     AST_T* brand_var = init_ast(AST_MEMALLOC_FUNCTION_CALL);
@@ -135,7 +139,8 @@ AST_T* parser_parse_memalloc_function_call(TypeAndValue* TAV, parser_T* parser, 
     }
 
     /* Needs to be done here, or else the visitor would never visit. */
-    return visitor_visit_memalloc_function_call(brand_var);
+    visitor_T* visitor = init_visitor();
+    return visitor_visit_memalloc_function_call(visitor,brand_var);
 }
 AST_T* parser_parse_brand_variable(TypeAndValue* TAV,parser_T* parser,char* variable_definition_variable_name) {
     if(BrandNeeded_==0) {
@@ -150,6 +155,11 @@ AST_T* parser_parse_brand_variable(TypeAndValue* TAV,parser_T* parser,char* vari
                 printf("\n\nErr[LINE %d]: Missing '{'.\n\n",parser->lexer->line);
                 exit(1);
             }
+
+            if(parser->current_token->type==TOKEN_RCURL) {
+                printf("\n\nErr[LINE %d]: brand body is empty. Example of brand keyword:\nmake [S]name: brand name {\n\tmemalloc(32);\n};\n\n",parser->lexer->line);
+                exit(1);
+            }
             
             char* mem_function_name = parser->current_token->value;
             parser_eat(TAV,parser,TOKEN_ID);
@@ -157,6 +167,9 @@ AST_T* parser_parse_brand_variable(TypeAndValue* TAV,parser_T* parser,char* vari
             BrandNeeded_=1;
             if(strcmp(mem_function_name,"memalloc")==0)
                 return parser_parse_memalloc_function_call(TAV,parser,brand_var_name);
+        } else {
+            printf("\n\nErr[LINE %d]: Branding %s instead of %s.\n\n",parser->lexer->line,brand_var_name,variable_definition_variable_name);
+            exit(1);
         }
     }
     return init_ast(AST_NOOP);
@@ -312,6 +325,7 @@ AST_T* parser_parse_expr(parser_T* parser) {
 
     switch(parser->current_token->type) {
         case TOKEN_STRING: return parser_parse_string(TAV,parser);
+        case TOKEN_INT: return parser_parse_int(TAV,parser);
         case TOKEN_ID: return parser_parse_id(parser);
     }
 
@@ -336,14 +350,13 @@ AST_T* parser_parse_term(parser_T* parser) {
 
     return parser;
 }*/
-AST_T* parser_parse_preVar_function_call(parser_T* parser) {
+AST_T* parser_parse_preVar_function_call(char* function_name,parser_T* parser) {
     AST_T* function_call = init_ast(AST_PREVAR_FUNCTION_CALL);
     TypeAndValue* TAV = calloc(1,sizeof(TypeAndValue));
     UpdTAV(TAV);
 
     parser_eat(TAV,parser, TOKEN_LPARENT);
-
-    function_call->function_call_name = parser->prev_token->value;
+    function_call->function_call_name = parser->current_token->value;
 
     function_call->function_call_arguments = calloc(1,sizeof(struct AST_STRUCT));
     AST_T* ast_expr = parser_parse_expr(parser);
@@ -367,24 +380,24 @@ AST_T* parser_parse_preVar_function_call(parser_T* parser) {
 
     //return function_call;
 }
-AST_T* parser_parse_function_call(parser_T* parser) {
+AST_T* parser_parse_function_call(char* function_name,parser_T* parser) {
     AST_T* function_call = init_ast(AST_FUNCTION_CALL);
     TypeAndValue* TAV = calloc(1,sizeof(TypeAndValue));
     UpdTAV(TAV);
 
     if(parser->current_token->type==TOKEN_ID)
         parser_eat(TAV, parser, TOKEN_ID);
+
+    function_call->function_call_name = parser->prev_token->value;
     if(parser->current_token->type==TOKEN_LPARENT)
         parser_eat(TAV,parser, TOKEN_LPARENT);
 
-    function_call->function_call_name = parser->prev_token->value;
-
     function_call->function_call_arguments = calloc(1,sizeof(struct AST_STRUCT));
     AST_T* ast_expr = parser_parse_expr(parser);
-    if(ast_expr) {
-        function_call->function_call_arguments[0] = ast_expr;
-        function_call->function_call_arguments_size++;
-    }
+    //if(ast_expr) {
+    function_call->function_call_arguments[0] = ast_expr;
+    function_call->function_call_arguments_size++;
+    //}
     while(parser->current_token->type == TOKEN_COMMA) {
         parser_eat(TAV,parser, TOKEN_COMMA);
 
@@ -425,15 +438,20 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
             }
         }
     }
-    else if(!(parser->current_token->type == TOKEN_LSQRBRACK))
+    else if(!(parser->current_token->type == TOKEN_LSQRBRACK)) {
         if(!(parser->current_token->type==TOKEN_TYPE_ANY)) {
             printf("\n\nErr[LINE %d]: Missing left square bracket('[') for [TYPE] param. Example of [TYPE] param:\nmake [S]sayHi:\"Hello World\";\n\n",parser->lexer->line);
             exit(1);
         }
-    if(parser->current_token->type==TOKEN_TYPE_STRING) /* = [S]*/
+    }
+    
+    int type;
+    if(parser->current_token->type==TOKEN_TYPE_STRING) /* = [S]*/ 
         parser_eat(TAV,parser,TOKEN_TYPE_STRING);
-    else if(parser->current_token->type==TOKEN_TYPE_INT) /* = [I]*/
+    else if(parser->current_token->type==TOKEN_TYPE_INT) /* = [I]*/ {
         parser_eat(TAV,parser,TOKEN_TYPE_INT);
+        type = TOKEN_TYPE_INT;
+    }
     else if(parser->current_token->type==TOKEN_TYPE_CHAR) /* = [C]*/
         parser_eat(TAV,parser,TOKEN_TYPE_CHAR);
     else if(parser->current_token->type==TOKEN_TYPE_ANY) /* = ~*/ {
@@ -447,7 +465,7 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
         printf("\n\nErr[LINE %d]: make [TYPE] param is empty.\nThe [TYPE] param needs a type of S(STRING) I(INTEGER) C(CHAR) A(ANY), it cannot be left empty.\n\n",parser->lexer->line);
         exit(1);
     }
-        
+
     if(parser->current_token->type == TOKEN_RSQRBRACK)
         parser_eat(TAV,parser, TOKEN_RSQRBRACK);
     else {
@@ -466,7 +484,10 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
             exit(1);
         }
     }
-
+    if(strcmp(parser->current_token->value,"n")==0&&type==TOKEN_TYPE_INT) {
+        parser_eat(TAV,parser,TOKEN_ID);
+        parser->lexer->values.isNeg=0;
+    }
 
     AST_T* variable_definition = init_ast(AST_VARIABLE_DEFINITION);
 
@@ -487,7 +508,7 @@ AST_T* parser_parse_prevar(TypeAndValue* TAV,parser_T* parser) {
     parser_eat(TAV,parser, TOKEN_ID);
 
     if(parser->current_token->type==TOKEN_LPARENT)
-        return parser_parse_preVar_function_call(parser);
+        return parser_parse_preVar_function_call(preVar_token_value,parser);
 
     AST_T* ast_PreVar = init_ast(AST_PREVAR);
     ast_PreVar->variable_name = preVar_token_value;
@@ -524,13 +545,33 @@ AST_T* parser_parse_variable(TypeAndValue* TAV,parser_T* parser) {
     parser_eat(TAV,parser, TOKEN_ID);
 
     if(parser->current_token->type == TOKEN_LPARENT) {
-        return parser_parse_function_call(parser);
+        return parser_parse_function_call(token_value,parser);
     }
-    
     AST_T* ast_variable = init_ast(AST_VARIABLE);
     ast_variable->variable_name = token_value;
 
     return ast_variable;
+}
+AST_T* parser_parse_int(TypeAndValue* TAV, parser_T* parser) {
+    AST_T* integer = init_ast(AST_INT);
+    integer->int_value = parser->lexer->values.int_value;
+    parser_eat(TAV,parser,TOKEN_INT);
+
+    if(parser->current_token->type==TOKEN_LCURL)
+        parser_eat(TAV,parser,TOKEN_LCURL);
+    if(strcmp(parser->current_token->value,"signed")==0) {
+        isSigned=0;
+        isUnsigned=1;
+    }
+    if(parser->current_token->type==TOKEN_RCURL)
+        parser_eat(TAV,parser,TOKEN_RCURL);
+    
+    if(integer->int_value<0&&isSigned==0) {
+        printf("\n\nErr[LINE %d]: Cannot have negative value of type signed int.\n\n",parser->lexer->line);
+        exit(1);
+    }
+    
+    return integer;
 }
 AST_T* parser_parse_string(TypeAndValue* TAV,parser_T* parser) {
     if(parser->current_token->type==TOKEN_SEMI)

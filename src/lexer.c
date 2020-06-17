@@ -17,17 +17,25 @@ lexer_T* init_lexer(char *contents) {
 }
 lexer_T* lexer_collect_print_type(lexer_T* lexer, char* type) {
     if(!(lexer->c==']')) {
-        printf("\n\nErr[LINE %d]: Expecting type, got %c.\n\n",lexer->line,lexer->c);
+        printf("\n\nErr[LINE %d]: Expecting type declaration\n\n",lexer->line);
         exit(1);
     }
-    if(strcmp(type,"str")==0)
+    if(strcmp(type,"str")==0) {
+        lexer->values.print_type = "str";
         lexer_advance_with_token(lexer,init_token(TOKEN_TYPE_STRING,lexer_get_current_char_as_string(lexer)));
-    else if(strcmp(type,"char")==0)
+    }
+    else if(strcmp(type,"char")==0) {
+        lexer->values.print_type = "char";
         lexer_advance_with_token(lexer,init_token(TOKEN_TYPE_CHAR,lexer_get_current_char_as_string(lexer)));
-    else if(strcmp(type,"int")==0)
+    }
+    else if(strcmp(type,"int")==0) {
+        lexer->values.print_type = "int";
         lexer_advance_with_token(lexer,init_token(TOKEN_TYPE_INT,lexer_get_current_char_as_string(lexer)));
-    else if(strcmp(type,"any")==0)
+    }
+    else if(strcmp(type,"any")==0) {
+        lexer->values.print_type = "anything";
         lexer_advance_with_token(lexer,init_token(TOKEN_TYPE_A,lexer_get_current_char_as_string(lexer)));
+    }
     else {
         printf("\n\nErr[LINE %d]: print's [TYPE] param cannot be left empty, or has a invalid type.\n\n",lexer->line);
         exit(1);
@@ -102,6 +110,11 @@ token_T* lexer_collect_integer_value(lexer_T* lexer) {
     }
     char* value = calloc(1,sizeof(char));
     value[0]='\0';
+    int multNeg;
+    printf("HEY");
+    if(lexer->values.isNeg==0)
+        multNeg=-1;
+    else multNeg=1;
 
     while(isdigit(lexer->c)) {
         char* current = get_current_as_string(lexer);
@@ -111,8 +124,10 @@ token_T* lexer_collect_integer_value(lexer_T* lexer) {
     }
     //lexer_advance(lexer);
     //init_token(TOKEN_TYPE_INT_VALUE, value);
+
+    lexer->values.int_value = atoi(value)*multNeg;
     
-    return init_token(TOKEN_TYPE_INT_VALUE, value);
+    return init_token(TOKEN_INT, value);
 }
 
 int lexer_get_bit_assignment(lexer_T* lexer) {
@@ -161,7 +176,7 @@ token_T* lexer_get_next_token(lexer_T* lexer) {
             lexer_skip_whitespace(lexer);
 
         if(isdigit(lexer->c)) {
-            token_T* token = lexer_collect_integer_value(lexer);
+            return lexer_collect_integer_value(lexer);
         }
 
         if(isalnum(lexer->c)) {
@@ -202,12 +217,18 @@ token_T* lexer_get_next_token(lexer_T* lexer) {
                 exit(1);
             }
         }
+
+        if(lexer->c=='"')
+            return lexer_collect_string(lexer);
+        if(lexer->c=='\'')
+            return lexer_collect_char_value(lexer);
         
         switch(lexer->c) {
-            case '"':lexer_collect_string(lexer);break;
-            case '\'':lexer_collect_char_value(lexer);break;
+            //case '"':lexer_collect_string(lexer);break;
+            //case '\'':lexer_collect_char_value(lexer);break;
             case ':': return lexer_advance_with_token(lexer,init_token(TOKEN_COLON,lexer_get_current_char_as_string(lexer))); break;
             case '~': strcpy(lexer->type,"Any");return lexer_advance_with_token(lexer,init_token(TOKEN_TYPE_ANY,lexer_get_current_char_as_string(lexer)));break;
+            case 'n': return lexer_advance_with_token(lexer,init_token(TOKEN_NEGATIVE_SYMBOL,lexer_get_current_char_as_string(lexer))); break;
             case '[': return lexer_advance_with_token(lexer,init_token(TOKEN_LSQRBRACK,lexer_get_current_char_as_string(lexer))); break;
             case ']': return lexer_advance_with_token(lexer,init_token(TOKEN_RSQRBRACK,lexer_get_current_char_as_string(lexer))); break;
             case '(': return lexer_advance_with_token(lexer,init_token(TOKEN_LPARENT,lexer_get_current_char_as_string(lexer))); break;

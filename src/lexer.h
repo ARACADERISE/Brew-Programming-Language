@@ -10,6 +10,14 @@ typedef struct LEXER_STRUCT {
     char c, type[15];
     unsigned int i;
     char *contents;
+
+    struct {
+        /* integer value */
+        int int_value;
+        int isNeg;
+        /* holds the print statements type */
+        char* print_type;
+    } values;
 } lexer_T;
 
 int lexer_get_bit_assignment(lexer_T* lexer);

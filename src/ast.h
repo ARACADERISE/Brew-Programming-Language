@@ -13,6 +13,7 @@ typedef struct AST_STRUCT {
         AST_FUNCTION_CALL,
         AST_PREVAR_FUNCTION_CALL,
         AST_STRING,
+        AST_INT,
         AST_COMPOUND,
         AST_NOOP
     } type;
@@ -44,9 +45,18 @@ typedef struct AST_STRUCT {
     /* For AST_STRING */
     char* string_value;
 
+    /* For AST_INT */
+    int int_value;
+
     /* For AST_COMPOUND */
     struct AST_STRUCT** compound_value;
     size_t compound_size;
+
+    /* for printing certain types */
+    char* print_type;
+
+    /* for exiting */
+    int total_lines;
 } AST_T;
 
 AST_T* init_ast(int type);

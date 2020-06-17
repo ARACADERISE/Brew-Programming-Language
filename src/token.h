@@ -7,6 +7,7 @@ typedef struct TOKEN_STRUCT {
         TOKEN_COLON,
         TOKEN_COMMA,
         TOKEN_STRING,
+        TOKEN_INT,
         TOKEN_TYPE_STRING,
         TOKEN_TYPE_STRING_VALUE,
         TOKEN_TYPE_INT,
@@ -16,6 +17,7 @@ typedef struct TOKEN_STRUCT {
         TOKEN_TYPE_ANY, /* For the make statement */
         TOKEN_TYPE_A, /* For the make statement */
         TOKEN_SEMI,
+        TOKEN_NEGATIVE_SYMBOL,
         TOKEN_LSQRBRACK,
         TOKEN_RSQRBRACK,
         TOKEN_LPARENT,
