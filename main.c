@@ -3,6 +3,7 @@
 #include "src/lexer.h"
 #include "src/parser.h"
 #include "src/visitor.h"
+#include "src/file_reader.h"
 
 /* 
     The BPL(Brew Programming Language) source code
@@ -15,7 +16,7 @@
     Think of it as writing C, but in a whole different language and at a higher level.
 */
 
-int main(void) {
+int main(int argc, char* args[]) {
 
     //lexer_T* lexer = init_lexer("varconst{NAME}:\"Hi\" Print();");
     /*lexer_T* lexer = init_lexer(
@@ -25,19 +26,13 @@ int main(void) {
       "make [I]ageT: brand ageT {memalloc(36);};\n"
       "varconst{HelloWorld}: \"Hello World!\";\n"
     );*/
-    lexer_T* lexer = init_lexer(
-        //"make [S]name: \"HEYYY\";\n"
-        "varconst{name}:\"Aidan\";\n"
-        "make [S]nameW:\"Aidan\";\n"
-        "print[any](nameW);\n"
-        "make [I]age: n 15{unsigned};\n"
-    );
+    lexer_T* lexer = init_lexer(read_file(args[1]));
     token_T* token = (void*)0;
 
     parser_T* parser = init_parser(lexer);
     AST_T* root = parser_parse(parser);
     
-    visitor_T* visitor = init_visitor();
+    visitor_T* visitor = init_visitor(lexer);
     //visitor_T* visitor = init_visitor();
     visitor_visit(visitor,root);
 

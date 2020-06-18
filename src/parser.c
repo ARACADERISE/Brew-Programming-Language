@@ -484,10 +484,9 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
             exit(1);
         }
     }
-    if(strcmp(parser->current_token->value,"n")==0&&type==TOKEN_TYPE_INT) {
+    /*if(strcmp(parser->current_token->value,"n")==0&&type==TOKEN_TYPE_INT) {
         parser_eat(TAV,parser,TOKEN_ID);
-        parser->lexer->values.isNeg=0;
-    }
+    } else parser->lexer->values.isNeg=1;*/
 
     AST_T* variable_definition = init_ast(AST_VARIABLE_DEFINITION);
 
@@ -562,7 +561,9 @@ AST_T* parser_parse_int(TypeAndValue* TAV, parser_T* parser) {
     if(strcmp(parser->current_token->value,"signed")==0) {
         isSigned=0;
         isUnsigned=1;
-    }
+        parser_eat(TAV,parser,TOKEN_ID); // signed
+    } else if(strcmp(parser->current_token->value,"unsigned")==0)
+        parser_eat(TAV,parser,TOKEN_ID); // unsigned
     if(parser->current_token->type==TOKEN_RCURL)
         parser_eat(TAV,parser,TOKEN_RCURL);
     
@@ -600,7 +601,7 @@ AST_T* parser_parse_string(TypeAndValue* TAV,parser_T* parser) {
         return ast_string;
     }*/
 
-    return init_ast(AST_NOOP);
+    //return init_ast(AST_NOOP);
 }
 AST_T* parser_parse_id(parser_T* parser) {
     TypeAndValue* TAV = calloc(1,sizeof(TypeAndValue));

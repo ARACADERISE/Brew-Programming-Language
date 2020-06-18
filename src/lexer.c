@@ -12,6 +12,8 @@ lexer_T* init_lexer(char *contents) {
     lexer->i = 0;
     lexer->c = contents[lexer->i];
     lexer->line=1;
+    lexer->values.print_type = 0;
+    lexer->values.isNeg=1;
 
     return lexer;
 }
@@ -33,7 +35,7 @@ lexer_T* lexer_collect_print_type(lexer_T* lexer, char* type) {
         lexer_advance_with_token(lexer,init_token(TOKEN_TYPE_INT,lexer_get_current_char_as_string(lexer)));
     }
     else if(strcmp(type,"any")==0) {
-        lexer->values.print_type = "anything";
+        lexer->values.print_type = "any";
         lexer_advance_with_token(lexer,init_token(TOKEN_TYPE_A,lexer_get_current_char_as_string(lexer)));
     }
     else {
@@ -51,12 +53,11 @@ void multi_line_comment(lexer_T* lexer) {
     while(1) {
         lexer_advance(lexer);
 
-        if(lexer->c=='*') {
+        if(lexer->c=='#') {
             lexer_advance(lexer);
             
-            if(lexer->c=='/') {
-                lexer_advance(lexer);
-                return;
+            if(lexer->c=='-') {
+                return lexer_advance(lexer);
             }
             else {
                 printf("\n\nErr[LINE %d]: Expecting '/', got %c",lexer->line,lexer->c);
@@ -104,17 +105,18 @@ char* get_current_as_string(lexer_T* lexer) {
     return val;
 }
 token_T* lexer_collect_integer_value(lexer_T* lexer) {
-    if(isdigit(lexer->c)&&!(strcmp(lexer->type,"Integer")==0)&&!(strcmp(lexer->type,"Any")==0)) {
+    if(isdigit(lexer->c)&&!(strcmp(lexer->values.print_type,"int")==0)&&!(strcmp(lexer->values.print_type,"any")==0)&&!(strcmp(lexer->type,"Integer")==0&&!(strcmp(lexer->type,"Any")==0))) {
         printf("\n\nErr[LINE %d]: Type of value: %s\nExpected Type: Integer.\n\n",lexer->line,lexer->type);
         exit(1);
     }
     char* value = calloc(1,sizeof(char));
     value[0]='\0';
     int multNeg;
-    printf("HEY");
-    if(lexer->values.isNeg==0)
+    if(lexer->values.isNeg==0) {
         multNeg=-1;
-    else multNeg=1;
+        //lexer_advance(lexer);
+    }
+    else {multNeg=1;/*lexer_advance(lexer);*/}
 
     while(isdigit(lexer->c)) {
         char* current = get_current_as_string(lexer);
@@ -144,6 +146,10 @@ int lexer_get_bit_assignment(lexer_T* lexer) {
 }
 token_T* lexer_collect_char_value(lexer_T* lexer) {
     if(!(strcmp(lexer->type,"Char")==0)&&!(strcmp(lexer->type,"Any")==0)) {
+        if(lexer->values.print_type!=0) {
+            printf("\n\nErr[LINE %d]: Print is of type %s. Attempted to print type char\n\n",lexer->line,lexer->values.print_type);
+            exit(1);
+        }
         printf("\n\nErr[LINE %d]: Type of value: %s\nExpected Type: Char.\n\n",lexer->line,lexer->type);
         exit(1);
     }
@@ -175,6 +181,10 @@ token_T* lexer_get_next_token(lexer_T* lexer) {
         if(lexer->c == ' ' || lexer->c == 10) 
             lexer_skip_whitespace(lexer);
 
+        if(lexer->c=='N') {
+            lexer->values.isNeg=0;
+            lexer_advance(lexer);
+        }
         if(isdigit(lexer->c)) {
             return lexer_collect_integer_value(lexer);
         }
@@ -205,10 +215,10 @@ token_T* lexer_get_next_token(lexer_T* lexer) {
             continue;
         }
 
-        if(lexer->c=='/') {
+        if(lexer->c=='-') {
             lexer_advance(lexer);
 
-            if(lexer->c=='*') {
+            if(lexer->c=='#') {
                 multi_line_comment(lexer);
                 continue;
             }
@@ -228,7 +238,7 @@ token_T* lexer_get_next_token(lexer_T* lexer) {
             //case '\'':lexer_collect_char_value(lexer);break;
             case ':': return lexer_advance_with_token(lexer,init_token(TOKEN_COLON,lexer_get_current_char_as_string(lexer))); break;
             case '~': strcpy(lexer->type,"Any");return lexer_advance_with_token(lexer,init_token(TOKEN_TYPE_ANY,lexer_get_current_char_as_string(lexer)));break;
-            case 'n': return lexer_advance_with_token(lexer,init_token(TOKEN_NEGATIVE_SYMBOL,lexer_get_current_char_as_string(lexer))); break;
+            //case 'n': lexer->values.isNeg=0;return lexer_advance_with_token(lexer,init_token(TOKEN_NEGATIVE_SYMBOL,lexer_get_current_char_as_string(lexer))); break;
             case '[': return lexer_advance_with_token(lexer,init_token(TOKEN_LSQRBRACK,lexer_get_current_char_as_string(lexer))); break;
             case ']': return lexer_advance_with_token(lexer,init_token(TOKEN_RSQRBRACK,lexer_get_current_char_as_string(lexer))); break;
             case '(': return lexer_advance_with_token(lexer,init_token(TOKEN_LPARENT,lexer_get_current_char_as_string(lexer))); break;
@@ -256,7 +266,7 @@ token_T* lexer_get_next_token(lexer_T* lexer) {
 }
 token_T* lexer_collect_string(lexer_T* lexer) {
     if(!(strcmp(lexer->type,"String")==0)&&!(strcmp(lexer->type,"Any")==0)) {
-        printf("\n\nErr[LINE %d]: Type of value: String\nExpected Type: %s.\n\n",lexer->line,lexer->type);
+        printf("\n\nErr[LINE %d]: Type of value: String\nExpected Type: %s.\n\n",lexer->line,lexer->values.print_type);
         exit(1);
     }
     lexer_advance(lexer);
