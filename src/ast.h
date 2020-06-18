@@ -13,6 +13,7 @@ typedef struct AST_STRUCT {
         AST_FUNCTION_CALL,
         AST_PREVAR_FUNCTION_CALL,
         AST_STRING,
+        AST_CHAR,
         AST_INT,
         AST_COMPOUND,
         AST_NOOP

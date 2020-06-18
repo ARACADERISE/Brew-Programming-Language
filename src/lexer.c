@@ -105,9 +105,11 @@ char* get_current_as_string(lexer_T* lexer) {
     return val;
 }
 token_T* lexer_collect_integer_value(lexer_T* lexer) {
-    if(isdigit(lexer->c)&&!(strcmp(lexer->values.print_type,"int")==0)&&!(strcmp(lexer->values.print_type,"any")==0)&&!(strcmp(lexer->type,"Integer")==0&&!(strcmp(lexer->type,"Any")==0))) {
-        printf("\n\nErr[LINE %d]: Type of value: %s\nExpected Type: Integer.\n\n",lexer->line,lexer->type);
-        exit(1);
+    if(isdigit(lexer->c)) {
+        if(!(strcmp(lexer->type,"Integer")==0)&&!(strcmp(lexer->type,"any")==0)) {
+          printf("\n\nErr[LINE %d]: Type of value: %s\nExpected Type: Integer.\n\n",lexer->line,lexer->type);
+          exit(1);
+        }
     }
     char* value = calloc(1,sizeof(char));
     value[0]='\0';
@@ -265,7 +267,7 @@ token_T* lexer_get_next_token(lexer_T* lexer) {
     return init_token(TOKEN_EOF, "\0");
 }
 token_T* lexer_collect_string(lexer_T* lexer) {
-    if(!(strcmp(lexer->type,"String")==0)&&!(strcmp(lexer->type,"Any")==0)) {
+    if(!(strcmp(lexer->type,"String")==0)&&!(strcmp(lexer->type,"Any")==0)&&!(strcmp(lexer->values.print_type,"str")==0)&&!(strcmp(lexer->values.print_type,"any")==0)) {
         printf("\n\nErr[LINE %d]: Type of value: String\nExpected Type: %s.\n\n",lexer->line,lexer->values.print_type);
         exit(1);
     }

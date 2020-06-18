@@ -13,12 +13,21 @@ static AST_T* print_function(visitor_T* visitor,AST_T** args, int size) {
                 if(strcmp(visitor->lexer->values.print_type,"str")==0||strcmp(visitor->lexer->values.print_type,"any")==0)
                     printf("%s\n",visited->string_value);
                 else {
-                    printf("\n\nErr[LINE %d]: Print is of type %s. Attempted to print type %s\n\n",visitor->lexer->line,visitor->lexer->values.print_type,visitor->lexer->type);
+                    printf("\n\nErr[LINE %d]: Print is of type %s. Attempted to print type other than char\n\n",visitor->lexer->line,visitor->lexer->values.print_type);
                     exit(1);
                 }
                 break;
             }
-            case AST_INT: printf("%d",visited->int_value);break;
+
+            case AST_INT: {
+                if(strcmp(visitor->lexer->values.print_type,"int")==0||strcmp(visitor->lexer->values.print_type,"any")==0)
+                    printf("%d",visited->int_value);
+                else {
+                    printf("\n\nErr[LINE %d]: Print is of type %s. Attempted to print type other than char\n\n",visitor->lexer->line,visitor->lexer->values.print_type);
+                    exit(1);
+                }
+                break;
+            }
             default: printf("\n\n%p\n\n",visited);break;
         }
     }
