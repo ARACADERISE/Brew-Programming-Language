@@ -503,39 +503,81 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
         parser_eat(TAV,parser,TOKEN_LCURL);
         re_check:
         if(strcmp(parser->current_token->value,"Tab")==0) {
-            parser->lexer->values.isTabbed=0;
-            parser->lexer->values.is_appended=1;
+            parser->lexer->values.isTabbedString = 0;
             parser_eat(TAV,parser,TOKEN_ID);
             lexer_skip_whitespace(parser->lexer);
-            parser->lexer->values.tabAmmount = lexer_get_bit_assignment(parser->lexer);
+            parser->lexer->values.tabAmmount = lexer_collect_ammount(parser->lexer);
             parser_eat(TAV,parser,TOKEN_COLON);
             //parser_eat(TAV,parser,TOKEN_SEMI);
             if(!(parser->current_token->type==TOKEN_RCURL)) goto re_check;
             else goto end;
         }
-        if(strcmp(parser->current_token->value,"printFirst")==0) {
-            parser->lexer->values.is_appended=0;
-            parser->lexer->values.isTabbed=1;
+        if(strcmp(parser->current_token->value,"END")==0) {
+            parser->lexer->values.isEND = 0;
             parser_eat(TAV,parser,TOKEN_ID);
-            parser_eat(TAV,parser,TOKEN_COLON);
-            parser->lexer->values.var_name_appended = parser->current_token->value;
-            parser_eat(TAV,parser,TOKEN_ID);
-            if(!(parser->current_token->type==TOKEN_RCURL)) goto re_check;
-            else goto end;
+
+            if(parser->current_token->type==TOKEN_COLON) parser_eat(TAV,parser,TOKEN_COLON);
+            if(parser->current_token->type==TOKEN_LCURL) {
+                parser_eat(TAV,parser,TOKEN_LCURL);
+                if(strcmp(parser->current_token->value,"Wrap")==0) {
+                    parser->lexer->values.isWrapped = 0;
+                    parser_eat(TAV,parser,TOKEN_ID);
+                    parser_eat(TAV,parser,TOKEN_LCURL);
+                    parser->lexer->values.wrapStringWith = calloc(3,sizeof(char)); /* 
+                        Allocating 3 memory spaces. Will become bigger later on when more wrap decorator
+                        types are introduces.
+                    */
+                    parser->lexer->values.wrapStringWith[0] = '\0';
+                    redo:
+                    if(strcmp(parser->current_token->value,"breaks")==0) {
+                        parser_eat(TAV,parser,TOKEN_ID);
+                        if(parser->current_token->type==TOKEN_LSQRBRACK) {
+                            parser->lexer->values.breakAmmountOfTimes = lexer_collect_ammount(parser->lexer);
+                            parser->lexer->values.wrapStringWith[1] = '\n';
+                            parser_eat(TAV,parser,TOKEN_LSQRBRACK);
+                            parser_eat(TAV,parser,TOKEN_RSQRBRACK);
+                        }
+                        goto ENDING;
+                    }
+                    if(strcmp(parser->current_token->value,"quotes")==0) {
+                        parser_eat(TAV,parser,TOKEN_ID);
+                        if(parser->current_token->type==TOKEN_LSQRBRACK) {
+                            parser->lexer->values.wrapStringWith[2] = '"';
+                            parser->lexer->values.ammountOfQuotes = lexer_collect_ammount(parser->lexer);
+                            if(parser->lexer->values.ammountOfQuotes%2!=0&&!(parser->lexer->values.ammountOfQuotes==1)) {
+                                printf("\n\nErr[LINE %d]: Cannot have odd amounts of quotes.\n\n",parser->lexer->line);
+                                exit(1);
+                            }
+                            parser_eat(TAV,parser,TOKEN_LSQRBRACK);
+                            parser_eat(TAV,parser,TOKEN_RSQRBRACK);
+                        } else {
+                            parser->lexer->values.ammountOfQuotes = 1;
+                            parser->lexer->values.wrapStringWith[2] = '"';
+                        }
+                    }
+                    ENDING:
+                    lexer_skip_whitespace(parser->lexer);
+
+                    if(!(parser->current_token->type==TOKEN_RCURL)) goto redo;
+                    else parser_eat(TAV,parser,TOKEN_RCURL);
+                }
+                parser_eat(TAV,parser,TOKEN_RCURL);
+            }
         }
+        lexer_skip_whitespace(parser->lexer);
+            
+        if(!(parser->current_token->type==TOKEN_RCURL)) goto re_check;
+        else goto end;
 
         end:
-        parser_eat(TAV, parser, TOKEN_RCURL);
-    }
-    if(parser->lexer->values.is_appended==0) {
-        if(strcmp(parser->lexer->values.var_name_appended,variable_definition->variable_definition_variable_name)==0) {
-            if(variable_definition->variable_definition_value->int_value) {
-                parser->lexer->values.int__value=variable_definition->variable_definition_value->int_value;
-            }
-            if(variable_definition->string_value) {
-                parser->lexer->values.string_value = variable_definition->string_value;
-            }
+        if(parser->lexer->values.isWrapped) {
+            /* Allocating new memory */
+            parser->lexer->values.wrapStringWith = realloc(
+                parser->lexer->values.wrapStringWith,
+                (strlen(parser->lexer->values.wrapStringWith)+strlen(parser->lexer->values.wrapStringWith))*sizeof(char)
+            );
         }
+        parser_eat(TAV, parser, TOKEN_RCURL);
     }
 
     return variable_definition;

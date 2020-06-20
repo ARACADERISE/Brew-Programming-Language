@@ -15,8 +15,10 @@ lexer_T* init_lexer(char *contents) {
     lexer->values.print_type = 0;
 
     /* For Decorators */
-    lexer->values.isNeg=1;
-    lexer->values.is_appended=1;
+    lexer->values.isNeg = 1;
+    lexer->values.isWrapped = 1;
+    lexer->values.isEND = 1;
+    lexer->values.hasEndAssignment = 1;
 
     return lexer;
 }
@@ -180,7 +182,7 @@ token_T* lexer_collect_char_value(lexer_T* lexer) {
     lexer_advance(lexer);
     return init_token(TOKEN_TYPE_CHAR_VALUE,val);
 }
-int lexer_collect_tab_ammount(lexer_T* lexer) {
+int lexer_collect_ammount(lexer_T* lexer) {
     char* ammount = calloc(1,sizeof(char));
     ammount[0]='\0';
 
@@ -192,7 +194,7 @@ int lexer_collect_tab_ammount(lexer_T* lexer) {
         free(cur);
         lexer_advance(lexer);
     }
-    lexer_advance(lexer);
+    //lexer_advance(lexer);
     return atoi(ammount);
 }
 token_T* lexer_get_next_token(lexer_T* lexer) {
@@ -245,10 +247,11 @@ token_T* lexer_get_next_token(lexer_T* lexer) {
                 multi_line_comment(lexer);
                 continue;
             }
-            else {
-                printf("\n\nErr[LINE %d]: Expecting multi line comment '/*', got %c\n\n",lexer->line,lexer->c);
+            /*else {
+                printf("\n\nErr[LINE %d]: Expecting multi line comment '-[', got %c\n\n",lexer->line,lexer->c);
                 exit(1);
-            }
+            }*/
+            continue;
         }
 
         if(lexer->c=='"')
@@ -298,13 +301,40 @@ token_T* lexer_collect_string(lexer_T* lexer) {
     value[0] = '\0';
 
     while(lexer->c != '"') {
-        char *s = lexer_get_current_char_as_string(lexer);
-        value = realloc(value,(strlen(value)+strlen(s)+1)*sizeof(char));
-        strcat(value,s);
+        if(lexer->c == '\\') {
+            lexer_advance(lexer);
+            if(lexer->c == 'n') {
+                value = realloc(value,(strlen(value)+2/*\n*/)*sizeof(char));
+                strcat(value,"\n");
+            } else if(lexer->c == '0') {
+                value[strlen(value)] = '\0';
+                lexer->values.hasEndAssignment = 0;
+                lexer_advance(lexer);
+                if(lexer->c!='"') {
+                    printf("\n\nErr[LINE %d]: Appending after end of string\n\n",lexer->line);
+                    exit(1);
+                }
 
+                /* Setting lexer pointer back one if the above error is not thrown */
+                lexer->i--;
+                lexer->c = lexer->contents[lexer->i];
+            } else {
+                value = realloc(value,(strlen(value)+1/*\*/)*sizeof(char));
+                strcat(value,"\\");
+
+                /* Since there was nothing after the '\', we want to set the lexer pointer back one */
+                lexer->i--;
+                lexer->c = lexer->contents[lexer->i];
+            }
+        } else {
+            char *s = lexer_get_current_char_as_string(lexer);
+            value = realloc(value,(strlen(value)+strlen(s)+1)*sizeof(char));
+            strcat(value,s);
+        }
         lexer_advance(lexer);
     }
-
+    
+    advance:
     lexer_advance(lexer);
 
     return init_token(TOKEN_STRING,value);

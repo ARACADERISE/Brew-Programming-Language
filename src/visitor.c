@@ -5,27 +5,60 @@
 #include "parser.h"
 #include "visitor.h"
 
-void print_with_decorator(AST_T* ast_,visitor_T* visitor) {
-    if(visitor->lexer->values.isTabbed==0) {
-        char* tab_sequence = calloc(visitor->lexer->values.tabAmmount,sizeof(char));
-        for(int i = 0; i < visitor->lexer->values.tabAmmount; i++) {
-            tab_sequence[i] = '\t';
-        }
-        printf("%s%s",ast_->string_value,tab_sequence);
-    } else printf("%s\n",ast_->string_value);
-}
-void print_appended_with_decorator(AST_T* visited,visitor_T* visitor,char* type) {
-    if(visitor->lexer->values.isTabbed==0) {
-        char* tab_sequence = calloc(visitor->lexer->values.tabAmmount,sizeof(char));
-        for(int i = 0; i < visitor->lexer->values.tabAmmount; i++) {
-            tab_sequence[i] = '\t';
-        }
-        if(strcmp(type,"int")==0)
-            printf("%d%s%s",visited->int_value,tab_sequence,visitor->lexer->values.prev_string_value);
-    } else {
-        if(strcmp(type,"int")==0)
-            printf("%d %s",visited->int_value,visitor->lexer->values.prev_string_value);
+char* break_sequence_(visitor_T* visitor) {
+    char* break_sequence = calloc(visitor->lexer->values.breakAmmountOfTimes,sizeof(char));
+    for(int i = 0; i < visitor->lexer->values.breakAmmountOfTimes; i++) {
+        break_sequence[i] = visitor->lexer->values.wrapStringWith[1]; // '\n'
+
+        if(!(visitor->lexer->values.hasEndAssignment==0))
+            break_sequence[i+1] = '\0';
     }
+
+    return break_sequence;
+}
+
+void print_with_decorator(AST_T* ast_,visitor_T* visitor) {
+    if(visitor->lexer->values.isTabbedString==0) {
+        char* tab_sequence = calloc(visitor->lexer->values.tabAmmount+1,sizeof(char));
+
+        for(int i = 0; i < visitor->lexer->values.tabAmmount; i++) {
+            tab_sequence[i] = '\t';
+        }
+        if(visitor->lexer->values.isEND==0) {
+            if(visitor->lexer->values.isWrapped==0) {
+                if(visitor->lexer->values.breakAmmountOfTimes>0&&visitor->lexer->values.ammountOfQuotes>0) {
+                    char* break_sequence = calloc(visitor->lexer->values.breakAmmountOfTimes+1,sizeof(char));
+                    char* quote_sequence = calloc(visitor->lexer->values.ammountOfQuotes,sizeof(char));
+                    break_sequence = break_sequence_(visitor);
+                    if(!(visitor->lexer->values.ammountOfQuotes==1)) {
+                        for(int i = 0; i < visitor->lexer->values.ammountOfQuotes; i++) {
+                            quote_sequence[i] = visitor->lexer->values.wrapStringWith[2]; // '"'
+                        }
+                        printf("%s%s%s%s%s%s%c",break_sequence,quote_sequence,ast_->string_value,tab_sequence,quote_sequence,break_sequence,visitor->lexer->values.wrapStringWith[0]);
+                        //free(visitor->lexer->values.wrapStringWith);
+                    } else {
+                        printf("%s%c%s%s%c%s%c",break_sequence,visitor->lexer->values.wrapStringWith[2],ast_->string_value,tab_sequence,visitor->lexer->values.wrapStringWith[2],break_sequence,visitor->lexer->values.wrapStringWith[0]);
+                        //free(visitor->lexer->values.wrapStringWith);
+                    }
+                } else if(visitor->lexer->values.ammountOfQuotes>0) {
+                    char* quote_sequence = calloc(visitor->lexer->values.ammountOfQuotes,sizeof(char));
+
+                    for(int i = 0; i < visitor->lexer->values.ammountOfQuotes; i++) {
+                        quote_sequence[i] = visitor->lexer->values.wrapStringWith[2];
+                    }
+                    printf("%s%s%s%s",quote_sequence,ast_->string_value,tab_sequence,quote_sequence);
+                } else if(visitor->lexer->values.breakAmmountOfTimes>0) {
+                    char* break_sequence = calloc(visitor->lexer->values.breakAmmountOfTimes,sizeof(char));
+                    break_sequence = break_sequence_(visitor);
+                    printf("%s%s%s%s",break_sequence,ast_->string_value,tab_sequence,break_sequence);
+                } else {
+                    if(!(visitor->lexer->values.hasEndAssignment==0))printf("%c%s%s%c%c",visitor->lexer->values.wrapStringWith[1],ast_->string_value,tab_sequence,visitor->lexer->values.wrapStringWith[1],visitor->lexer->values.wrapStringWith[0]);
+                    else printf("%c%s%s%c",visitor->lexer->values.wrapStringWith[1],ast_->string_value,tab_sequence,visitor->lexer->values.wrapStringWith[1]);
+                    //free(visitor->lexer->values.wrapStringWith);
+                }
+            }
+        } else printf("%s%s",ast_->string_value,tab_sequence);
+    } else printf("%s\n",ast_->string_value);
 }
 
 static AST_T* print_function(visitor_T* visitor,AST_T** args, int size) {
@@ -38,10 +71,7 @@ static AST_T* print_function(visitor_T* visitor,AST_T** args, int size) {
         switch(visited->type) {
             case AST_STRING: {
                 if(strcmp(visitor->lexer->values.print_type,"str")==0||strcmp(visitor->lexer->values.print_type,"any")==0) {
-                    ++string_printed;
-                    if(visitor->lexer->values.is_appended==0)
-                        visitor->lexer->values.prev_string_value = visited->string_value;
-                    else print_with_decorator(visited,visitor);
+                    print_with_decorator(visited,visitor);
                 }
                 else {
                     printf("\n\nErr[LINE %d]: Print is of type %s. Attempted to print type other than char\n\n",visitor->lexer->line,visitor->lexer->values.print_type);
@@ -58,44 +88,13 @@ static AST_T* print_function(visitor_T* visitor,AST_T** args, int size) {
                         }
                         printf("%d%s",visited->int_value,tab_sequence);
                     } else*/ 
-                    ++int_printed;
-                    if(visitor->lexer->values.is_appended==0) {
-                        system("clear");
-                        if(visitor->lexer->values.prev_string_value) {
-                            print_appended_with_decorator(visited,visitor,"int");
-                        } else goto END;
-                    } else printf("%d",visited->int_value);
+                    printf("%d",visited->int_value);
                 }
                 else {
                     printf("\n\nErr[LINE %d]: Print is of type %s. Attempted to print type other than char\n\n",visitor->lexer->line,visitor->lexer->values.print_type);
                     exit(1);
                 }
                 break;
-            }
-            default: {
-                printf("IN DEFAULT");
-                if(visitor->lexer->values.prev_string_value) {
-                    if(int_printed<1) {
-                        printf("{%s}%s",visitor->lexer->values.var_name_appended,visitor->lexer->values.prev_string_value);
-                    }
-                }
-                break;
-            }
-        }
-        END:
-        if(visitor->lexer->values.is_appended==0) {
-            if(int_printed<1) {
-                if(visitor->lexer->values.string_value)
-                    printf("%s %s",visitor->lexer->values.string_value,visitor->lexer->values.prev_string_value);
-                if(visitor->lexer->values.int__value)
-                    printf("%d %s",visitor->lexer->values.int__value,visitor->lexer->values.prev_string_value);
-            } else if(string_printed<1) {
-                if(visitor->lexer->values.prev_string_value&&visitor->lexer->values.int__value) {
-                    printf("%s %d",visitor->lexer->values.prev_string_value,visitor->lexer->values.int__value);
-                } else if(visitor->lexer->values.int__value) printf("%d",visitor->lexer->values.int__value);
-                if(visitor->lexer->values.string_value) {
-                    printf("%s %s",visitor->lexer->values.prev_string_value,visitor->lexer->values.string_value);
-                }
             }
         }
     }
