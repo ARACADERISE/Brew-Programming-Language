@@ -6,7 +6,7 @@
 #include "visitor.h"
 
 char* break_sequence_(visitor_T* visitor) {
-    char* break_sequence = calloc(visitor->lexer->values.breakAmmountOfTimes,sizeof(char));
+    char* break_sequence = calloc(visitor->lexer->values.breakAmmountOfTimes+1,sizeof(char));
     for(int i = 0; i < visitor->lexer->values.breakAmmountOfTimes; i++) {
         break_sequence[i] = visitor->lexer->values.wrapStringWith[1]; // '\n'
 
