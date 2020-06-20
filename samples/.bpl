@@ -1,8 +1,9 @@
 -# A multi line comment! #-
 # A single line comment!
 
+make [I]age: 15{signed};
 make [S]MyName: "Aidan"; # A variable of type String
-print[any](MyName); # print statement able to print any type, in this case printing MyName
+print[any](MyName,age,); # print statement able to print any type, in this case printing MyName
 
 -#
     This is a constant variable in the language.

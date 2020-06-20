@@ -13,7 +13,10 @@ lexer_T* init_lexer(char *contents) {
     lexer->c = contents[lexer->i];
     lexer->line=1;
     lexer->values.print_type = 0;
+
+    /* For Decorators */
     lexer->values.isNeg=1;
+    lexer->values.is_appended=1;
 
     return lexer;
 }
@@ -177,6 +180,21 @@ token_T* lexer_collect_char_value(lexer_T* lexer) {
     lexer_advance(lexer);
     return init_token(TOKEN_TYPE_CHAR_VALUE,val);
 }
+int lexer_collect_tab_ammount(lexer_T* lexer) {
+    char* ammount = calloc(1,sizeof(char));
+    ammount[0]='\0';
+
+    //lexer_skip_whitespace(lexer);
+
+    while(isdigit(lexer->c)) {
+        char* cur = get_current_as_string(lexer);
+        strcat(ammount, cur);
+        free(cur);
+        lexer_advance(lexer);
+    }
+    lexer_advance(lexer);
+    return atoi(ammount);
+}
 token_T* lexer_get_next_token(lexer_T* lexer) {
 
     while(lexer->c != '\0' && lexer->i < strlen(lexer->contents)) {
@@ -188,7 +206,10 @@ token_T* lexer_get_next_token(lexer_T* lexer) {
             lexer_advance(lexer);
         }
         if(isdigit(lexer->c)) {
-            return lexer_collect_integer_value(lexer);
+            /*if(lexer->values.isTabbed==0) {
+                lexer->values.tabAmmount = lexer_collect_tab_ammount(lexer);
+            }
+            else */return lexer_collect_integer_value(lexer);
         }
 
         if(isalnum(lexer->c)) {
@@ -252,6 +273,7 @@ token_T* lexer_get_next_token(lexer_T* lexer) {
             case '!': return lexer_advance_with_token(lexer,init_token(TOKEN_PREVAR_END_SYMBOL,lexer_get_current_char_as_string(lexer))); break;
             case '_': return lexer_advance_with_token(lexer,init_token(TOKEN_NO_VALUE,lexer_get_current_char_as_string(lexer))); break;
             case '\0': return init_token(TOKEN_EOF,"\0");break;
+            case '=': return lexer_advance_with_token(lexer,init_token(TOKEN_EQUALS,lexer_get_current_char_as_string(lexer))); break;
             default: {
                 lexer->i--;
                 lexer->c = lexer->contents[lexer->i];

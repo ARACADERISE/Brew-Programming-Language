@@ -489,7 +489,6 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
     } else parser->lexer->values.isNeg=1;*/
 
     AST_T* variable_definition = init_ast(AST_VARIABLE_DEFINITION);
-
     if(BrandNeeded_==0||strcmp(parser->current_token->value,"brand")==0) {
         BrandNeeded_=0;
         parser_parse_brand_variable(TAV,parser,variable_definition_variable_name);
@@ -499,6 +498,45 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
     }
 
     variable_definition->variable_definition_variable_name = variable_definition_variable_name;
+
+    if(parser->current_token->type==TOKEN_LCURL) {
+        parser_eat(TAV,parser,TOKEN_LCURL);
+        re_check:
+        if(strcmp(parser->current_token->value,"Tab")==0) {
+            parser->lexer->values.isTabbed=0;
+            parser->lexer->values.is_appended=1;
+            parser_eat(TAV,parser,TOKEN_ID);
+            lexer_skip_whitespace(parser->lexer);
+            parser->lexer->values.tabAmmount = lexer_get_bit_assignment(parser->lexer);
+            parser_eat(TAV,parser,TOKEN_COLON);
+            //parser_eat(TAV,parser,TOKEN_SEMI);
+            if(!(parser->current_token->type==TOKEN_RCURL)) goto re_check;
+            else goto end;
+        }
+        if(strcmp(parser->current_token->value,"printFirst")==0) {
+            parser->lexer->values.is_appended=0;
+            parser->lexer->values.isTabbed=1;
+            parser_eat(TAV,parser,TOKEN_ID);
+            parser_eat(TAV,parser,TOKEN_COLON);
+            parser->lexer->values.var_name_appended = parser->current_token->value;
+            parser_eat(TAV,parser,TOKEN_ID);
+            if(!(parser->current_token->type==TOKEN_RCURL)) goto re_check;
+            else goto end;
+        }
+
+        end:
+        parser_eat(TAV, parser, TOKEN_RCURL);
+    }
+    if(parser->lexer->values.is_appended==0) {
+        if(strcmp(parser->lexer->values.var_name_appended,variable_definition->variable_definition_variable_name)==0) {
+            if(variable_definition->variable_definition_value->int_value) {
+                parser->lexer->values.int__value=variable_definition->variable_definition_value->int_value;
+            }
+            if(variable_definition->string_value) {
+                parser->lexer->values.string_value = variable_definition->string_value;
+            }
+        }
+    }
 
     return variable_definition;
 }
@@ -579,15 +617,15 @@ AST_T* parser_parse_string(TypeAndValue* TAV,parser_T* parser) {
         parser_eat(TAV, parser, TOKEN_SEMI);
 
     //if(!(IsPre)) {
-        AST_T* ast_string = init_ast(AST_STRING);
-        ast_string->string_value = parser->current_token->value;
+    AST_T* ast_string = init_ast(AST_STRING);
+    ast_string->string_value = parser->current_token->value;
 
-        strcpy(TAV->ForSetup.Value[TAV->ForSetup.ValueIndex],ast_string->string_value);
-        strcpy(TAV->ForPrint.Value[TAV->ForPrint.ValueIndex],ast_string->string_value);
-        TAV->ForSetup.ValueIndex++;
-        TAV->ForPrint.ValueIndex++;
-        parser_eat(TAV,parser, TOKEN_STRING);
-        return ast_string;
+    strcpy(TAV->ForSetup.Value[TAV->ForSetup.ValueIndex],ast_string->string_value);
+    strcpy(TAV->ForPrint.Value[TAV->ForPrint.ValueIndex],ast_string->string_value);
+    TAV->ForSetup.ValueIndex++;
+    TAV->ForPrint.ValueIndex++;
+    parser_eat(TAV,parser, TOKEN_STRING);
+    return ast_string;
     //}
     /*else {
         AST_T* ast_string = init_ast(AST_STRING);

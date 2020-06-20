@@ -5,6 +5,7 @@ typedef struct TOKEN_STRUCT {
     enum {
         TOKEN_ID,
         TOKEN_COLON,
+        TOKEN_EQUALS,
         TOKEN_COMMA,
         TOKEN_STRING,
         TOKEN_INT,
@@ -28,6 +29,7 @@ typedef struct TOKEN_STRUCT {
         TOKEN_NO_VALUE,
         TOKEN_PREVAR_END_SYMBOL,
         TOKEN_PRESET_TYPE_SETVAR,
+        TOKEN_TAB_VALUE,
         TOKEN_USE_KEYWORD, /* To-Do: Give meaning to this */
         TOKEN_EOF
     } type;
