@@ -3,6 +3,6 @@ make [S]MyGithubName: "ARACADERISE"{END{
     reference: MGN
 } Tab:1};
 make [I]age: 16;
-
+varconst{name}:"AIDAN";
 print[any](MyGithubName,age);
-print[any](MGN);
+print[any](MGN,name);

@@ -200,6 +200,10 @@ AST_T* visitor_visit_variable(visitor_T* visitor,AST_T* node) {
         if(
             strcmp(variable->variable_definition_variable_name,node->variable_name)==0
         ) {
+            if(strcmp(node->variable_name,visitor->lexer->values.ref_var_name)==0) {
+                printf("\n[REFERENCE]%p\n",visitor->lexer->values.ref_var_value);
+                return node;
+            }
             return visitor_visit(visitor,variable->variable_definition_value);
         } else if(visitor->lexer->values.isReference==0) {
             if(strcmp(visitor->lexer->values.ref_var_name,node->variable_name)==0) {
