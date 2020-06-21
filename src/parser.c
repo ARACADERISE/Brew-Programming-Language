@@ -264,7 +264,8 @@ AST_T* parser_parse_preVarConstant(parser_T* parser) {
     AST_T* variable_definition_value = parser_parse_expr(parser);
     AST_T* variable_definition = init_ast(AST_PREVAR_DEFINITION);
 
-    variable_definition->variable_definition_variable_name = variable_definition_variable_name;
+    variable_definition->PreVar_name = variable_definition_variable_name;
+    variable_definition->variable_definition_variable_name = variable_definition->PreVar_name;
     variable_definition->variable_definition_value = variable_definition_value;
     return variable_definition;
 }
@@ -500,6 +501,7 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
     variable_definition->variable_definition_variable_name = variable_definition_variable_name;
 
     if(parser->current_token->type==TOKEN_LCURL) {
+        parser->lexer->values.hasDecorator = 0;
         parser_eat(TAV,parser,TOKEN_LCURL);
         re_check:
         if(strcmp(parser->current_token->value,"Tab")==0) {
@@ -536,6 +538,9 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
                             parser->lexer->values.wrapStringWith[1] = '\n';
                             parser_eat(TAV,parser,TOKEN_LSQRBRACK);
                             parser_eat(TAV,parser,TOKEN_RSQRBRACK);
+                        } else {
+                            parser->lexer->values.breakAmmountOfTimes = 1;
+                            parser->lexer->values.wrapStringWith[1] = '\n';
                         }
                         goto ENDING;
                     }
@@ -560,6 +565,23 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
 
                     if(!(parser->current_token->type==TOKEN_RCURL)) goto redo;
                     else parser_eat(TAV,parser,TOKEN_RCURL);
+                }
+                if(strcmp(parser->current_token->value,"reference")==0) {
+                    parser->lexer->values.isReference = 0;
+                    parser_eat(TAV,parser,TOKEN_ID);
+
+                    if(parser->current_token->type==TOKEN_COLON)
+                        parser_eat(TAV,parser,TOKEN_COLON);
+                    
+                    parser->lexer->values.ref_for_variable = variable_definition->variable_definition_variable_name;
+                    parser->lexer->values.ref_var_name = parser->current_token->value;
+
+                    /* Allocating memory for the rest of the referenced variable */
+                    parser->lexer->values.size_of_referenced_variable = calloc(2,sizeof(size_t));
+                    parser->lexer->values.size_of_referenced_variable[0] = sizeof(parser->lexer->values.ref_var_name);
+                    parser->lexer->values.ref_var_value = malloc(sizeof(parser->lexer->values.ref_var_value));
+
+                    parser_eat(TAV,parser,TOKEN_ID);
                 }
                 parser_eat(TAV,parser,TOKEN_RCURL);
             }

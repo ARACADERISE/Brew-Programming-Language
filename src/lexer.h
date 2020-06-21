@@ -2,6 +2,7 @@
 #define LEXER_H
 #include "token.h"
 #include <stdbool.h>
+#include <stdlib.h>
 
 extern bool BrandNeeded;
 
@@ -12,6 +13,8 @@ typedef struct LEXER_STRUCT {
     char *contents;
 
     struct {
+        /* Init start for decorators */
+        int hasDecorator;
         /* integer value */
         int int_value;
         int isNeg;
@@ -28,6 +31,16 @@ typedef struct LEXER_STRUCT {
         char* wrapStringWith;
         int breakAmmountOfTimes;
         int ammountOfQuotes;
+        /* For Decorators: END: Wrap: reference*/
+        int isReference;
+        char* ref_for_variable;
+        char* ref_var_name;
+        char** ref_var_value;
+        size_t* size_of_referenced_variable; // Array of 2, [0] = old value size, [1] new value size
+        /* For Decorators: END: Wrap: reference: working with the memory*/
+        int isTerminatedMemory;
+        int isDumped_ReAllocatedMemory;
+        int isSameMemory;
         /* For \0, either for END or put in by user */
         int hasEndAssignment;
         /* holds the print statements type */

@@ -14,11 +14,16 @@ lexer_T* init_lexer(char *contents) {
     lexer->line=1;
     lexer->values.print_type = 0;
 
-    /* For Decorators */
+    /* For Decorators. All false by default */
     lexer->values.isNeg = 1;
     lexer->values.isWrapped = 1;
     lexer->values.isEND = 1;
     lexer->values.hasEndAssignment = 1;
+    lexer->values.hasDecorator = 1;
+    lexer->values.isReference = 1;
+    lexer->values.isTerminatedMemory = 1;
+    lexer->values.isSameMemory = 1;
+    lexer->values.isDumped_ReAllocatedMemory = 1;
 
     return lexer;
 }

@@ -6,7 +6,7 @@
 #include "visitor.h"
 
 char* break_sequence_(visitor_T* visitor) {
-    char* break_sequence = calloc(visitor->lexer->values.breakAmmountOfTimes+1,sizeof(char));
+    char* break_sequence = calloc(visitor->lexer->values.breakAmmountOfTimes,sizeof(char));
     for(int i = 0; i < visitor->lexer->values.breakAmmountOfTimes; i++) {
         break_sequence[i] = visitor->lexer->values.wrapStringWith[1]; // '\n'
 
@@ -17,9 +17,18 @@ char* break_sequence_(visitor_T* visitor) {
     return break_sequence;
 }
 
+void assign_ref_val(visitor_T* visitor,AST_T* node,char* seq) {
+    if(visitor->lexer->values.isReference==0) {
+        visitor->lexer->values.ref_var_value = &seq;
+        visitor->lexer->values.size_of_referenced_variable[1] = sizeof(visitor->lexer->values.ref_var_value)+strlen(seq);
+    }
+}
+
 void print_with_decorator(AST_T* ast_,visitor_T* visitor) {
-    if(visitor->lexer->values.isTabbedString==0) {
-        char* tab_sequence = calloc(visitor->lexer->values.tabAmmount+1,sizeof(char));
+
+    if(visitor->lexer->values.hasDecorator==0&&visitor->lexer->values.isTabbedString==0) {
+        char* tab_sequence = calloc(visitor->lexer->values.tabAmmount,sizeof(char));
+        char* sequence = malloc(8*sizeof(char*));
 
         for(int i = 0; i < visitor->lexer->values.tabAmmount; i++) {
             tab_sequence[i] = '\t';
@@ -34,11 +43,15 @@ void print_with_decorator(AST_T* ast_,visitor_T* visitor) {
                         for(int i = 0; i < visitor->lexer->values.ammountOfQuotes; i++) {
                             quote_sequence[i] = visitor->lexer->values.wrapStringWith[2]; // '"'
                         }
+                        sprintf(sequence,"%s%s%s%s%s%s%c",break_sequence,quote_sequence,ast_->string_value,tab_sequence,quote_sequence,break_sequence,visitor->lexer->values.wrapStringWith[0]);
                         printf("%s%s%s%s%s%s%c",break_sequence,quote_sequence,ast_->string_value,tab_sequence,quote_sequence,break_sequence,visitor->lexer->values.wrapStringWith[0]);
-                        //free(visitor->lexer->values.wrapStringWith);
+                        assign_ref_val(visitor, ast_,sequence);
+                        free(sequence);
                     } else {
+                        sprintf(sequence,"%s%c%s%s%c%s%c",break_sequence,visitor->lexer->values.wrapStringWith[2],ast_->string_value,tab_sequence,visitor->lexer->values.wrapStringWith[2],break_sequence,visitor->lexer->values.wrapStringWith[0]);
                         printf("%s%c%s%s%c%s%c",break_sequence,visitor->lexer->values.wrapStringWith[2],ast_->string_value,tab_sequence,visitor->lexer->values.wrapStringWith[2],break_sequence,visitor->lexer->values.wrapStringWith[0]);
-                        //free(visitor->lexer->values.wrapStringWith);
+                        assign_ref_val(visitor, ast_,sequence);
+                        free(sequence);
                     }
                 } else if(visitor->lexer->values.ammountOfQuotes>0) {
                     char* quote_sequence = calloc(visitor->lexer->values.ammountOfQuotes,sizeof(char));
@@ -46,18 +59,33 @@ void print_with_decorator(AST_T* ast_,visitor_T* visitor) {
                     for(int i = 0; i < visitor->lexer->values.ammountOfQuotes; i++) {
                         quote_sequence[i] = visitor->lexer->values.wrapStringWith[2];
                     }
+                    sprintf(sequence,"%s%s%s%s",quote_sequence,ast_->string_value,tab_sequence,quote_sequence);
                     printf("%s%s%s%s",quote_sequence,ast_->string_value,tab_sequence,quote_sequence);
+                    assign_ref_val(visitor, ast_,sequence);
+                    free(sequence);
                 } else if(visitor->lexer->values.breakAmmountOfTimes>0) {
                     char* break_sequence = calloc(visitor->lexer->values.breakAmmountOfTimes,sizeof(char));
                     break_sequence = break_sequence_(visitor);
                     printf("%s%s%s%s",break_sequence,ast_->string_value,tab_sequence,break_sequence);
+                    assign_ref_val(visitor, ast_,sequence);
+                    free(sequence);
                 } else {
-                    if(!(visitor->lexer->values.hasEndAssignment==0))printf("%c%s%s%c%c",visitor->lexer->values.wrapStringWith[1],ast_->string_value,tab_sequence,visitor->lexer->values.wrapStringWith[1],visitor->lexer->values.wrapStringWith[0]);
-                    else printf("%c%s%s%c",visitor->lexer->values.wrapStringWith[1],ast_->string_value,tab_sequence,visitor->lexer->values.wrapStringWith[1]);
-                    //free(visitor->lexer->values.wrapStringWith);
+                    sprintf(sequence,"%c%s%s%c",visitor->lexer->values.wrapStringWith[1],ast_->string_value,tab_sequence,visitor->lexer->values.wrapStringWith[1]);
+                    printf("%c%s%s%c",visitor->lexer->values.wrapStringWith[1],ast_->string_value,tab_sequence,visitor->lexer->values.wrapStringWith[1]);
+                    assign_ref_val(visitor, ast_,sequence);
+                    free(sequence);
                 }
+            } else {
+                printf("%s%s",ast_->string_value,tab_sequence);
+                assign_ref_val(visitor, ast_,sequence);
+                free(sequence);
             }
-        } else printf("%s%s",ast_->string_value,tab_sequence);
+            assign_ref_val(visitor, ast_,sequence);
+        } else {
+            printf("%s%s",ast_->string_value,tab_sequence);
+            assign_ref_val(visitor, ast_,sequence);
+            free(sequence);
+        }
     } else printf("%s\n",ast_->string_value);
 }
 
@@ -137,8 +165,6 @@ AST_T* visitor_visit_memalloc_function_call(visitor_T* visitor,AST_T* node) {
   //printf("ALLOCATIN MEMORY FOR %s",node->brand_var_name);
 }
 AST_T* visitor_visit_prevar_definition(visitor_T* visitor,AST_T* node) {
-    if(visitor->variable_definitions==(void*)0)
-        ALLOCATE_VAR_DEFINITION_MEMORY(visitor);
 }
 AST_T* visitor_visit_prevar_function_call(visitor_T* visitor,AST_T* node) {
 }
@@ -171,8 +197,18 @@ AST_T* visitor_visit_function_call(visitor_T* visitor,AST_T* node) {
 AST_T* visitor_visit_variable(visitor_T* visitor,AST_T* node) {
     for(int i = 0; i < visitor->variable_definitions_size; i++) {
         AST_T* variable = visitor->variable_definitions[i];
-        if(strcmp(variable->variable_definition_variable_name,node->variable_name)==0)
+        if(
+            strcmp(variable->variable_definition_variable_name,node->variable_name)==0
+        ) {
             return visitor_visit(visitor,variable->variable_definition_value);
+        } else if(visitor->lexer->values.isReference==0) {
+            if(strcmp(visitor->lexer->values.ref_var_name,node->variable_name)==0) {
+                variable->variable_definition_variable_name = node->variable_name;
+                printf("\n[REFERENCE]%p\n",visitor->lexer->values.ref_var_value);
+                //return visitor_visit(visitor, node);
+                return node;
+            }
+        }
     }
     printf("\n\nErr: %s not declared/made or is a constant(varconst)\n\n",node->variable_name);
     return node;
