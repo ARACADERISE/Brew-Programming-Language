@@ -15,6 +15,9 @@ typedef struct LEXER_STRUCT {
     struct {
         /* Init start for decorators */
         int hasDecorator;
+        /* For Decorators: Reform: PushValue */
+        int isPushValue;
+        char* pushValue;
         /* integer value */
         int int_value;
         int isNeg;
@@ -61,5 +64,6 @@ token_T* lexer_collect_string(lexer_T* lexer);
 token_T* lexer_collect_id(lexer_T* lexer);
 token_T* lexer_advance_with_token(lexer_T* lexer, token_T* token);
 char* lexer_get_current_char_as_string(lexer_T* lexer);
+char* get_current_as_string(lexer_T* lexer);
 
 #endif

@@ -3,6 +3,7 @@
 #include <string.h>
 //#include <stdbool.h>
 #include <ctype.h>
+#include "lexer.h"
 #include "parser.h"
 #include "token.h"
 
@@ -24,6 +25,7 @@ lexer_T* init_lexer(char *contents) {
     lexer->values.isTerminatedMemory = 1;
     lexer->values.isSameMemory = 1;
     lexer->values.isDumped_ReAllocatedMemory = 1;
+    lexer->values.isPushValue = 1;
 
     return lexer;
 }
@@ -221,19 +223,19 @@ token_T* lexer_get_next_token(lexer_T* lexer) {
 
         if(isalnum(lexer->c)) {
             /* Finding type declarations. Will be inside of square brackets */
-            if(lexer->c == 'S') {
+            if(lexer->c == 'S'&&!(lexer->values.isPushValue==0)) {
                 strcpy(lexer->type,"String");
                 return lexer_advance_with_token(lexer,init_token(TOKEN_TYPE_STRING,lexer_get_current_char_as_string(lexer)));
             }
-            if(lexer->c == 'I') {
+            if(lexer->c == 'I'&&!(lexer->values.isPushValue==0)) {
                 strcpy(lexer->type,"Integer");
                 return lexer_advance_with_token(lexer,init_token(TOKEN_TYPE_INT,lexer_get_current_char_as_string(lexer)));
             }
-            if(lexer->c == 'C') {
+            if(lexer->c == 'C'&&!(lexer->values.isPushValue==0)) {
                 strcpy(lexer->type,"Char");
                 return lexer_advance_with_token(lexer,init_token(TOKEN_TYPE_CHAR,lexer_get_current_char_as_string(lexer)));
             }
-            if(lexer->c=='A') {
+            if(lexer->c=='A'&&!(lexer->values.isPushValue==0)) {
                 strcpy(lexer->type,"Any");
                 return lexer_advance_with_token(lexer,init_token(TOKEN_TYPE_A,lexer_get_current_char_as_string(lexer)));
             }
@@ -259,10 +261,8 @@ token_T* lexer_get_next_token(lexer_T* lexer) {
             continue;
         }
 
-        if(lexer->c=='"')
-            return lexer_collect_string(lexer);
-        if(lexer->c=='\'')
-            return lexer_collect_char_value(lexer);
+        if(lexer->c=='"') return lexer_collect_string(lexer);
+        if(lexer->c=='\'') return lexer_collect_char_value(lexer);
         
         switch(lexer->c) {
             //case '"':lexer_collect_string(lexer);break;
@@ -275,7 +275,7 @@ token_T* lexer_get_next_token(lexer_T* lexer) {
             case '(': return lexer_advance_with_token(lexer,init_token(TOKEN_LPARENT,lexer_get_current_char_as_string(lexer))); break;
             case ')': return lexer_advance_with_token(lexer,init_token(TOKEN_RPARENT,lexer_get_current_char_as_string(lexer))); break;
             case ';': return lexer_advance_with_token(lexer,init_token(TOKEN_SEMI,lexer_get_current_char_as_string(lexer))); break;
-            case ',': return lexer_advance_with_token(lexer,init_token(TOKEN_COMMA,lexer_get_current_char_as_string(lexer))); break;
+            case ',': if(!(lexer->values.isPushValue==0)) return lexer_advance_with_token(lexer,init_token(TOKEN_COMMA,lexer_get_current_char_as_string(lexer)));else lexer_advance(lexer); break;
             case '{': return lexer_advance_with_token(lexer,init_token(TOKEN_LCURL,lexer_get_current_char_as_string(lexer))); break;
             case '}': return lexer_advance_with_token(lexer,init_token(TOKEN_RCURL,lexer_get_current_char_as_string(lexer))); break;
             case '!': return lexer_advance_with_token(lexer,init_token(TOKEN_PREVAR_END_SYMBOL,lexer_get_current_char_as_string(lexer))); break;
@@ -340,6 +340,7 @@ token_T* lexer_collect_string(lexer_T* lexer) {
     }
     
     advance:
+    if(lexer->values.isPushValue==0) lexer->values.pushValue = value;
     lexer_advance(lexer);
 
     return init_token(TOKEN_STRING,value);

@@ -561,9 +561,106 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
                             parser->lexer->values.ammountOfQuotes = 1;
                             parser->lexer->values.wrapStringWith[2] = '"';
                         }
+                        if(!(parser->current_token->type==TOKEN_RCURL)) goto redo;
+                        else parser_eat(TAV,parser,TOKEN_RCURL);
                     }
-                    if(!(parser->current_token->type==TOKEN_RCURL)) goto redo;
-                    else parser_eat(TAV,parser,TOKEN_RCURL);
+                    if(strcmp(parser->current_token->value,"Reform")==0) {
+                        //variable_definition->variable_definition_value->string_value
+                        parser_eat(TAV,parser,TOKEN_ID);
+                        /* Possible variables to be used */
+                        size_t newBytes = 0;
+                        size_t totalStringBits = strlen(variable_definition->variable_definition_value->string_value);
+                        char* TO = malloc(8*sizeof(char));
+                        char VALUE[1][100];
+
+                        if(parser->current_token->type==TOKEN_COLON)
+                            parser_eat(TAV,parser,TOKEN_COLON);
+
+                        if(parser->current_token->type==TOKEN_LCURL) {
+                            parser_eat(TAV,parser,TOKEN_LCURL);
+                            ReCheckREFORM:
+                            if(strcmp(parser->current_token->value,"alloc")==0) {
+                                parser_eat(TAV,parser,TOKEN_ID);
+                                lexer_skip_whitespace(parser->lexer);
+                                newBytes = lexer_collect_ammount(parser->lexer);
+                                if(newBytes<16)
+                                    newBytes = 16 + newBytes;
+                                for(int i = 0; i < strlen(variable_definition->variable_definition_value->string_value); i++) {
+                                    totalStringBits += 8;
+                                }
+                                totalStringBits *= newBytes;
+                                variable_definition->variable_definition_value->string_value = realloc(
+                                    variable_definition->variable_definition_value->string_value,
+                                    totalStringBits*sizeof(char)
+                                );
+                                parser_eat(TAV,parser,TOKEN_COLON);
+                                if(!(parser->current_token->type==TOKEN_RCURL)) goto ReCheckREFORM;
+                                else parser_eat(TAV,parser,TOKEN_RCURL);
+                            }
+                            if(strcmp(parser->current_token->value,"PushValue")==0) {
+                                parser->lexer->values.isPushValue = 0;
+                                parser_eat(TAV,parser,TOKEN_ID);
+
+                                parser_eat(TAV,parser,TOKEN_LCURL);
+                                ACTION_CHECK:
+                                if(strcmp(parser->current_token->value,"To")==0) {
+                                    parser_eat(TAV,parser,TOKEN_ID);
+                                    parser_eat(TAV,parser,TOKEN_COLON);
+                                    TO = parser->current_token->value;
+                                    parser_eat(TAV,parser,TOKEN_ID);
+                                    if(!(parser->current_token->type==TOKEN_RCURL)) goto ACTION_CHECK;
+                                    else parser_eat(TAV,parser,TOKEN_RCURL);
+                                }
+                                if(strcmp(parser->current_token->value,"Value")==0) {
+                                    parser_eat(TAV,parser,TOKEN_ID);
+                                    int i = 0;
+                                    parser_eat(TAV,parser,TOKEN_COLON);
+                                    size_t checkBits = 0;
+                                    parser_eat(TAV,parser,TOKEN_STRING);
+
+                                    for(int i = 0; i < strlen(parser->lexer->values.pushValue); i++) {
+                                        checkBits += 8;
+                                    }
+                                    strcpy(VALUE[0],variable_definition->variable_definition_value->string_value);
+                                    if(!(checkBits > totalStringBits)) {
+                                        if(strcmp(TO,"START")==0) {
+                                            for(int i = 0; i < strlen(variable_definition->variable_definition_value->string_value)+strlen(parser->lexer->values.pushValue);i++) {
+                                                variable_definition->variable_definition_value->string_value[i] = parser->lexer->values.pushValue[i];
+                                            }
+                                            if(!(variable_definition->variable_definition_value->string_value[strlen(variable_definition->variable_definition_value->string_value)-1]==' '))
+                                                variable_definition->variable_definition_value->string_value[strlen(variable_definition->variable_definition_value->string_value)] = ' ';
+                                            strcat(variable_definition->variable_definition_value->string_value,VALUE[0]);
+                                            checkBits=0;
+                                            for(int i = 0; i < strlen(variable_definition->variable_definition_value->string_value); i++) {
+                                                checkBits += 8;
+                                            }
+                                            totalStringBits = checkBits;
+                                            variable_definition->variable_definition_value->string_value = realloc(
+                                                variable_definition->variable_definition_value->string_value,
+                                                totalStringBits*sizeof(char)
+                                            );
+                                        }
+                                        if(strcmp(TO,"END")==0) {
+                                            
+                                        }
+                                    } else {
+
+                                    }
+
+                                    if(!(parser->current_token->type==TOKEN_RCURL)) goto ACTION_CHECK;
+                                    else parser_eat(TAV,parser,TOKEN_RCURL);
+                                }
+                                if(!(parser->current_token->type==TOKEN_RCURL)) goto ReCheckREFORM;
+                                else parser_eat(TAV,parser,TOKEN_RCURL);
+                            }
+                            if(!(parser->current_token->type==TOKEN_RCURL)) goto redo;
+                            else parser_eat(TAV,parser,TOKEN_RCURL);
+                        }
+                        if(!(parser->current_token->type==TOKEN_RCURL)) goto redo;
+                        else parser_eat(TAV,parser,TOKEN_RCURL);
+                    }
+                    /*if(!(parser->current_token->type==TOKEN_RCURL)) goto redo;
+                    else parser_eat(TAV,parser,TOKEN_RCURL);*/
                 }
                 if(strcmp(parser->current_token->value,"reference")==0) {
                     parser->lexer->values.isReference = 0;
@@ -586,7 +683,7 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
                 parser_eat(TAV,parser,TOKEN_RCURL);
             }
         }
-        lexer_skip_whitespace(parser->lexer);
+        //lexer_skip_whitespace(parser->lexer);
             
         if(!(parser->current_token->type==TOKEN_RCURL)) goto re_check;
         else goto end;
@@ -599,6 +696,8 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
                 3*sizeof(char)
             );
         }
+        /* Needed to be done, else when collecting types in lexer would be mess up*/
+        if(parser->lexer->values.isPushValue == 0) parser->lexer->values.isPushValue = 1;
         parser_eat(TAV, parser, TOKEN_RCURL);
     }
 
