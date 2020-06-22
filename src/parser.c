@@ -521,6 +521,7 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
             if(parser->current_token->type==TOKEN_COLON) parser_eat(TAV,parser,TOKEN_COLON);
             if(parser->current_token->type==TOKEN_LCURL) {
                 parser_eat(TAV,parser,TOKEN_LCURL);
+                CheckEND:
                 if(strcmp(parser->current_token->value,"Wrap")==0) {
                     parser->lexer->values.isWrapped = 0;
                     parser_eat(TAV,parser,TOKEN_ID);
@@ -542,7 +543,8 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
                             parser->lexer->values.breakAmmountOfTimes = 1;
                             parser->lexer->values.wrapStringWith[1] = '\n';
                         }
-                        goto ENDING;
+                        if(parser->current_token->type==TOKEN_RCURL) parser_eat(TAV,parser,TOKEN_RCURL);
+                        else goto redo;
                     }
                     if(strcmp(parser->current_token->value,"quotes")==0) {
                         parser_eat(TAV,parser,TOKEN_ID);
@@ -560,9 +562,6 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
                             parser->lexer->values.wrapStringWith[2] = '"';
                         }
                     }
-                    ENDING:
-                    lexer_skip_whitespace(parser->lexer);
-
                     if(!(parser->current_token->type==TOKEN_RCURL)) goto redo;
                     else parser_eat(TAV,parser,TOKEN_RCURL);
                 }
@@ -582,6 +581,7 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
                     parser->lexer->values.ref_var_value = malloc(sizeof(parser->lexer->values.ref_var_value));
 
                     parser_eat(TAV,parser,TOKEN_ID);
+                    if(!(parser->current_token->type==TOKEN_RCURL)) goto CheckEND;
                 }
                 parser_eat(TAV,parser,TOKEN_RCURL);
             }
@@ -596,7 +596,7 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
             /* Allocating new memory */
             parser->lexer->values.wrapStringWith = realloc(
                 parser->lexer->values.wrapStringWith,
-                (strlen(parser->lexer->values.wrapStringWith)+strlen(parser->lexer->values.wrapStringWith))*sizeof(char)
+                3*sizeof(char)
             );
         }
         parser_eat(TAV, parser, TOKEN_RCURL);
