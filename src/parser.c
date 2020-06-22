@@ -571,7 +571,7 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
                         size_t newBytes = 0;
                         size_t totalStringBits = strlen(variable_definition->variable_definition_value->string_value);
                         char* TO = malloc(8*sizeof(char));
-                        char VALUE[1][100];
+                        char VALUE[2][totalStringBits*totalStringBits*totalStringBits*sizeof(char*)];
 
                         if(parser->current_token->type==TOKEN_COLON)
                             parser_eat(TAV,parser,TOKEN_COLON);
@@ -622,6 +622,7 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
                                         checkBits += 8;
                                     }
                                     strcpy(VALUE[0],variable_definition->variable_definition_value->string_value);
+                                    REDO:
                                     if(!(checkBits > totalStringBits)) {
                                         if(strcmp(TO,"START")==0) {
                                             for(int i = 0; i < strlen(variable_definition->variable_definition_value->string_value)+strlen(parser->lexer->values.pushValue);i++) {
@@ -630,6 +631,7 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
                                             if(!(variable_definition->variable_definition_value->string_value[strlen(variable_definition->variable_definition_value->string_value)-1]==' '))
                                                 variable_definition->variable_definition_value->string_value[strlen(variable_definition->variable_definition_value->string_value)] = ' ';
                                             strcat(variable_definition->variable_definition_value->string_value,VALUE[0]);
+                                            
                                             checkBits=0;
                                             for(int i = 0; i < strlen(variable_definition->variable_definition_value->string_value); i++) {
                                                 checkBits += 8;
@@ -641,12 +643,30 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
                                             );
                                         }
                                         if(strcmp(TO,"END")==0) {
-                                            
+                                            variable_definition->variable_definition_value->string_value = realloc(
+                                                variable_definition->variable_definition_value->string_value,
+                                                (strlen(variable_definition->variable_definition_value->string_value)+strlen(parser->lexer->values.pushValue))*sizeof(char)
+                                            );
+                                            if(
+                                                !(variable_definition->variable_definition_value->string_value[strlen(variable_definition->variable_definition_value->string_value)-1]==' ') &&
+                                                !(parser->lexer->values.pushValue[strlen(variable_definition->variable_definition_value->string_value-1)]==' ')
+                                            )
+                                                variable_definition->variable_definition_value->string_value[strlen(variable_definition->variable_definition_value->string_value)] = ' ';
+                                            strcat(variable_definition->variable_definition_value->string_value,parser->lexer->values.pushValue);
+                                            checkBits=0;
+                                            for(int i = 0; i < strlen(variable_definition->variable_definition_value->string_value); i++) {
+                                                checkBits += 8;
+                                            }
+                                            totalStringBits = checkBits;
+                                            variable_definition->variable_definition_value->string_value = realloc(
+                                                variable_definition->variable_definition_value->string_value,
+                                                totalStringBits*sizeof(char)
+                                            );
                                         }
                                     } else {
-
+                                        totalStringBits=checkBits;
+                                        goto REDO;
                                     }
-
                                     if(!(parser->current_token->type==TOKEN_RCURL)) goto ACTION_CHECK;
                                     else parser_eat(TAV,parser,TOKEN_RCURL);
                                 }
