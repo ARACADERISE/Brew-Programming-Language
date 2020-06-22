@@ -645,7 +645,7 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
                                         if(strcmp(TO,"END")==0) {
                                             variable_definition->variable_definition_value->string_value = realloc(
                                                 variable_definition->variable_definition_value->string_value,
-                                                (strlen(variable_definition->variable_definition_value->string_value)+strlen(parser->lexer->values.pushValue))*sizeof(char)
+                                                (strlen(parser->lexer->values.pushValue)+strlen(variable_definition->variable_definition_value->string_value))*totalStringBits // old size of the string
                                             );
                                             if(
                                                 !(variable_definition->variable_definition_value->string_value[strlen(variable_definition->variable_definition_value->string_value)-1]==' ') &&
