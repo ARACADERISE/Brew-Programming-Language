@@ -28,7 +28,7 @@ void print_with_decorator(AST_T* ast_,visitor_T* visitor) {
 
     if(visitor->lexer->values.hasDecorator==0&&visitor->lexer->values.isTabbedString==0) {
         char* tab_sequence = calloc(visitor->lexer->values.tabAmmount,sizeof(char));
-        char* sequence = malloc(8*sizeof(char*));
+        char* sequence;
 
         for(int i = 0; i < visitor->lexer->values.tabAmmount; i++) {
             tab_sequence[i] = '\t';
@@ -43,11 +43,13 @@ void print_with_decorator(AST_T* ast_,visitor_T* visitor) {
                         for(int i = 0; i < visitor->lexer->values.ammountOfQuotes; i++) {
                             quote_sequence[i] = visitor->lexer->values.wrapStringWith[2]; // '"'
                         }
+                        sequence = malloc((strlen(break_sequence)+strlen(quote_sequence))*sizeof(quote_sequence));
                         sprintf(sequence,"%s%s%s%s%s%s%c",break_sequence,quote_sequence,ast_->string_value,tab_sequence,quote_sequence,break_sequence,visitor->lexer->values.wrapStringWith[0]);
                         printf("%s%s%s%s%s%s%c",break_sequence,quote_sequence,ast_->string_value,tab_sequence,quote_sequence,break_sequence,visitor->lexer->values.wrapStringWith[0]);
                         assign_ref_val(visitor, ast_,sequence);
                         free(sequence);
                     } else {
+                        sequence = malloc(strlen(break_sequence)*sizeof(break_sequence));
                         sprintf(sequence,"%s%c%s%s%c%s%c",break_sequence,visitor->lexer->values.wrapStringWith[2],ast_->string_value,tab_sequence,visitor->lexer->values.wrapStringWith[2],break_sequence,visitor->lexer->values.wrapStringWith[0]);
                         printf("%s%c%s%s%c%s%c",break_sequence,visitor->lexer->values.wrapStringWith[2],ast_->string_value,tab_sequence,visitor->lexer->values.wrapStringWith[2],break_sequence,visitor->lexer->values.wrapStringWith[0]);
                         assign_ref_val(visitor, ast_,sequence);
@@ -59,6 +61,7 @@ void print_with_decorator(AST_T* ast_,visitor_T* visitor) {
                     for(int i = 0; i < visitor->lexer->values.ammountOfQuotes; i++) {
                         quote_sequence[i] = visitor->lexer->values.wrapStringWith[2];
                     }
+                    sequence = malloc(visitor->lexer->values.ammountOfQuotes*sizeof(quote_sequence));
                     sprintf(sequence,"%s%s%s%s",quote_sequence,ast_->string_value,tab_sequence,quote_sequence);
                     printf("%s%s%s%s",quote_sequence,ast_->string_value,tab_sequence,quote_sequence);
                     assign_ref_val(visitor, ast_,sequence);
@@ -66,6 +69,8 @@ void print_with_decorator(AST_T* ast_,visitor_T* visitor) {
                 } else if(visitor->lexer->values.breakAmmountOfTimes>0) {
                     char* break_sequence = calloc(visitor->lexer->values.breakAmmountOfTimes,sizeof(char));
                     break_sequence = break_sequence_(visitor);
+                    sequence = malloc(strlen(break_sequence)*sizeof(break_sequence));
+                    sprintf(sequence,"%s%s%s%s",break_sequence,ast_->string_value,tab_sequence,break_sequence);
                     printf("%s%s%s%s",break_sequence,ast_->string_value,tab_sequence,break_sequence);
                     assign_ref_val(visitor, ast_,sequence);
                     free(sequence);

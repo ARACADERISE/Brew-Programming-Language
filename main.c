@@ -26,6 +26,10 @@ int main(int argc, char* args[]) {
       "make [I]ageT: brand ageT {memalloc(36);};\n"
       "varconst{HelloWorld}: \"Hello World!\";\n"
     );*/
+    if(argc < 2) {
+        printf("\n\nErr: Command setup to run Brew files:\n./main.o <FILENAME>\n\n");
+        exit(1);
+    }
     lexer_T* lexer = init_lexer(read_file(args[1]));
     token_T* token = (void*)0;
 
