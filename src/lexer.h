@@ -36,9 +36,10 @@ typedef struct LEXER_STRUCT {
         int ammountOfQuotes;
         /* For Decorators: END: Wrap: reference*/
         int isReference;
+        int isDerived;
         char* ref_for_variable;
         char* ref_var_name;
-        char** ref_var_value;
+        char* ref_var_value_POINTER;
         size_t* size_of_referenced_variable; // Array of 2, [0] = old value size, [1] new value size
         /* For Decorators: END: Wrap: reference: working with the memory*/
         int isTerminatedMemory;

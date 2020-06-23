@@ -550,11 +550,14 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
                         parser_eat(TAV,parser,TOKEN_ID);
                         if(parser->current_token->type==TOKEN_LSQRBRACK) {
                             parser->lexer->values.wrapStringWith[2] = '"';
-                            parser->lexer->values.ammountOfQuotes = lexer_collect_ammount(parser->lexer);
-                            if(parser->lexer->values.ammountOfQuotes%2!=0&&!(parser->lexer->values.ammountOfQuotes==1)) {
-                                printf("\n\nErr[LINE %d]: Cannot have odd amounts of quotes.\n\n",parser->lexer->line);
-                                exit(1);
-                            }
+                            recheck:
+                            if(isdigit(parser->lexer->c)) {
+                                parser->lexer->values.ammountOfQuotes = lexer_collect_ammount(parser->lexer);
+                                if(parser->lexer->values.ammountOfQuotes%2!=0&&!(parser->lexer->values.ammountOfQuotes==1)) {
+                                    printf("\n\nErr[LINE %d]: Cannot have odd amounts of quotes.\n\n",parser->lexer->line);
+                                    exit(1);
+                                }
+                            } else parser->lexer->values.ammountOfQuotes = 1;
                             parser_eat(TAV,parser,TOKEN_LSQRBRACK);
                             parser_eat(TAV,parser,TOKEN_RSQRBRACK);
                         } else {
@@ -564,7 +567,10 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
                         if(!(parser->current_token->type==TOKEN_RCURL)) goto redo;
                         else parser_eat(TAV,parser,TOKEN_RCURL);
                     }
-                    if(strcmp(parser->current_token->value,"Reform")==0) {
+                    /*if(!(parser->current_token->type==TOKEN_RCURL)) goto redo;
+                    else parser_eat(TAV,parser,TOKEN_RCURL);*/
+                }
+                if(strcmp(parser->current_token->value,"Reform")==0) {
                         //variable_definition->variable_definition_value->string_value
                         parser_eat(TAV,parser,TOKEN_ID);
                         /* Possible variables to be used */
@@ -587,6 +593,11 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
                                     newBytes = 16 + newBytes;
                                 for(int i = 0; i < strlen(variable_definition->variable_definition_value->string_value); i++) {
                                     totalStringBits += 8;
+                                }
+                                if(totalStringBits<1) {
+                                    /* This means the user is trying to allocate to a should be branded variable. Throw an error */
+                                    printf("\n\nErr[LINE %d]: Trying to 1. Reform and 2. allocate to empty string.\nTry branding your variable first before reforming it..\n\n",parser->lexer->line);
+                                    exit(1);
                                 }
                                 totalStringBits *= newBytes;
                                 variable_definition->variable_definition_value->string_value = realloc(
@@ -673,14 +684,8 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
                                 if(!(parser->current_token->type==TOKEN_RCURL)) goto ReCheckREFORM;
                                 else parser_eat(TAV,parser,TOKEN_RCURL);
                             }
-                            if(!(parser->current_token->type==TOKEN_RCURL)) goto redo;
-                            else parser_eat(TAV,parser,TOKEN_RCURL);
                         }
-                        if(!(parser->current_token->type==TOKEN_RCURL)) goto redo;
-                        else parser_eat(TAV,parser,TOKEN_RCURL);
-                    }
-                    /*if(!(parser->current_token->type==TOKEN_RCURL)) goto redo;
-                    else parser_eat(TAV,parser,TOKEN_RCURL);*/
+                        if(!(parser->current_token->type==TOKEN_RCURL)) goto CheckEND;
                 }
                 if(strcmp(parser->current_token->value,"reference")==0) {
                     parser->lexer->values.isReference = 0;
@@ -695,9 +700,19 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
                     /* Allocating memory for the rest of the referenced variable */
                     parser->lexer->values.size_of_referenced_variable = calloc(2,sizeof(size_t));
                     parser->lexer->values.size_of_referenced_variable[0] = sizeof(parser->lexer->values.ref_var_name);
-                    parser->lexer->values.ref_var_value = malloc(sizeof(parser->lexer->values.ref_var_value));
+                    parser->lexer->values.ref_var_value_POINTER = malloc(sizeof(parser->lexer->values.ref_var_value_POINTER));
 
                     parser_eat(TAV,parser,TOKEN_ID);
+                    /* This is for deriving the reference. */
+                    if(parser->current_token->type==TOKEN_LCURL) {
+                        parser_eat(TAV,parser,TOKEN_LCURL);
+                        if(strcmp(parser->current_token->value,"derived")==0) {
+                            parser_eat(TAV,parser,TOKEN_ID);
+                            parser->lexer->values.isDerived=0;
+                        }
+                        parser_eat(TAV,parser,TOKEN_RCURL);
+                    }
+
                     if(!(parser->current_token->type==TOKEN_RCURL)) goto CheckEND;
                 }
                 parser_eat(TAV,parser,TOKEN_RCURL);

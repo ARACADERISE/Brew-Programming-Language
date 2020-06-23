@@ -30,12 +30,14 @@ int main(int argc, char* args[]) {
         printf("\n\nErr: Command setup to run Brew files:\n./main.o <FILENAME>\n\n");
         exit(1);
     }
-    lexer_T* lexer = init_lexer(read_file(args[1]));
+    lexer_T* lexer;
+    for(int i = 0; i < argc; i++)
+        lexer = init_lexer(read_file(args[i]));
     token_T* token = (void*)0;
 
     parser_T* parser = init_parser(lexer);
     AST_T* root = parser_parse(parser);
-    
+            
     visitor_T* visitor = init_visitor(lexer);
     //visitor_T* visitor = init_visitor();
     visitor_visit(visitor,root);

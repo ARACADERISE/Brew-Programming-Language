@@ -19,6 +19,7 @@ typedef struct TOKEN_STRUCT {
         TOKEN_TYPE_A, /* For the make statement */
         TOKEN_SEMI,
         TOKEN_NEGATIVE_SYMBOL,
+        TOKEN_ADVANCEMENT_OPERATOR,
         TOKEN_LSQRBRACK,
         TOKEN_RSQRBRACK,
         TOKEN_LPARENT,

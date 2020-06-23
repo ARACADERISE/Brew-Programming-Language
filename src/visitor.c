@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include "parser.h"
 #include "visitor.h"
+#include "mem_management.h"
 
 char* break_sequence_(visitor_T* visitor) {
     char* break_sequence = calloc(visitor->lexer->values.breakAmmountOfTimes,sizeof(char));
@@ -19,13 +20,13 @@ char* break_sequence_(visitor_T* visitor) {
 
 void assign_ref_val(visitor_T* visitor,AST_T* node,char* seq) {
     if(visitor->lexer->values.isReference==0) {
-        visitor->lexer->values.ref_var_value = &seq;
-        visitor->lexer->values.size_of_referenced_variable[1] = sizeof(visitor->lexer->values.ref_var_value)+strlen(seq);
+        if(seq)
+            visitor->lexer->values.ref_var_value_POINTER = seq;
+        visitor->lexer->values.size_of_referenced_variable[1] = sizeof(visitor->lexer->values.ref_var_value_POINTER)+strlen(seq);
     }
 }
 
 void print_with_decorator(AST_T* ast_,visitor_T* visitor) {
-
     if(visitor->lexer->values.hasDecorator==0&&visitor->lexer->values.isTabbedString==0) {
         char* tab_sequence = calloc(visitor->lexer->values.tabAmmount,sizeof(char));
         char* sequence;
@@ -47,13 +48,11 @@ void print_with_decorator(AST_T* ast_,visitor_T* visitor) {
                         sprintf(sequence,"%s%s%s%s%s%s%c",break_sequence,quote_sequence,ast_->string_value,tab_sequence,quote_sequence,break_sequence,visitor->lexer->values.wrapStringWith[0]);
                         printf("%s%s%s%s%s%s%c",break_sequence,quote_sequence,ast_->string_value,tab_sequence,quote_sequence,break_sequence,visitor->lexer->values.wrapStringWith[0]);
                         assign_ref_val(visitor, ast_,sequence);
-                        free(sequence);
                     } else {
                         sequence = malloc((sizeof(*ast_)+strlen(break_sequence))*sizeof(break_sequence));
                         sprintf(sequence,"%s%c%s%s%c%s%c",break_sequence,visitor->lexer->values.wrapStringWith[2],ast_->string_value,tab_sequence,visitor->lexer->values.wrapStringWith[2],break_sequence,visitor->lexer->values.wrapStringWith[0]);
                         printf("%s%c%s%s%c%s%c",break_sequence,visitor->lexer->values.wrapStringWith[2],ast_->string_value,tab_sequence,visitor->lexer->values.wrapStringWith[2],break_sequence,visitor->lexer->values.wrapStringWith[0]);
                         assign_ref_val(visitor, ast_,sequence);
-                        free(sequence);
                     }
                 } else if(visitor->lexer->values.ammountOfQuotes>0) {
                     char* quote_sequence = calloc(visitor->lexer->values.ammountOfQuotes,sizeof(char));
@@ -65,7 +64,6 @@ void print_with_decorator(AST_T* ast_,visitor_T* visitor) {
                     sprintf(sequence,"%s%s%s%s",quote_sequence,ast_->string_value,tab_sequence,quote_sequence);
                     printf("%s%s%s%s",quote_sequence,ast_->string_value,tab_sequence,quote_sequence);
                     assign_ref_val(visitor, ast_,sequence);
-                    free(sequence);
                 } else if(visitor->lexer->values.breakAmmountOfTimes>0) {
                     char* break_sequence = calloc(visitor->lexer->values.breakAmmountOfTimes,sizeof(char));
                     break_sequence = break_sequence_(visitor);
@@ -73,13 +71,11 @@ void print_with_decorator(AST_T* ast_,visitor_T* visitor) {
                     sprintf(sequence,"%s%s%s%s",break_sequence,ast_->string_value,tab_sequence,break_sequence);
                     printf("%s%s%s%s",break_sequence,ast_->string_value,tab_sequence,break_sequence);
                     assign_ref_val(visitor, ast_,sequence);
-                    free(sequence);
                 } else {
                     sequence = malloc((sizeof(*ast_)+strlen(tab_sequence))*sizeof(char));
                     sprintf(sequence,"%c%s%s%c",visitor->lexer->values.wrapStringWith[1],ast_->string_value,tab_sequence,visitor->lexer->values.wrapStringWith[1]);
                     printf("%c%s%s%c",visitor->lexer->values.wrapStringWith[1],ast_->string_value,tab_sequence,visitor->lexer->values.wrapStringWith[1]);
                     assign_ref_val(visitor, ast_,sequence);
-                    free(sequence);
                 }
             } else {
                 sequence = malloc((sizeof(*ast_)+strlen(tab_sequence))*sizeof(char));
@@ -87,12 +83,11 @@ void print_with_decorator(AST_T* ast_,visitor_T* visitor) {
                 assign_ref_val(visitor, ast_,sequence);
                 free(sequence);
             }
-            assign_ref_val(visitor, ast_,sequence);
+            sequence = Brew_Realloc_Memory_Strict(sequence, strlen(sequence), sizeof(char));
         } else {
             sequence = malloc((sizeof(*ast_)+strlen(tab_sequence))*sizeof(char));
             printf("%s%s",ast_->string_value,tab_sequence);
             assign_ref_val(visitor, ast_,sequence);
-            free(sequence);
         }
     } else printf("%s\n",ast_->string_value);
 }
@@ -209,16 +204,24 @@ AST_T* visitor_visit_variable(visitor_T* visitor,AST_T* node) {
             strcmp(variable->variable_definition_variable_name,node->variable_name)==0
         ) {
             if(visitor->lexer->values.isReference==0&&strcmp(node->variable_name,visitor->lexer->values.ref_var_name)==0) {
-                printf("\n[REFERENCE]%p\n",visitor->lexer->values.ref_var_value);
-                return node;
+                if(!(strlen(visitor->lexer->values.print_type)<1)) {
+                    if(!(visitor->lexer->values.isDerived==0))
+                        printf("\n[REFERENCE]%p\n",visitor->lexer->values.ref_var_value_POINTER);
+                    else printf("\n[REFERENCE]%s\n",visitor->lexer->values.ref_var_value_POINTER);
+                    return node;
+                }
             }
             return visitor_visit(visitor,variable->variable_definition_value);
         } else if(visitor->lexer->values.isReference==0) {
             if(strcmp(visitor->lexer->values.ref_var_name,node->variable_name)==0) {
                 variable->variable_definition_variable_name = node->variable_name;
-                printf("\n[REFERENCE]%p\n",visitor->lexer->values.ref_var_value);
-                //return visitor_visit(visitor, node);
-                return node;
+                if(!(strlen(visitor->lexer->values.print_type)<1)) {
+                    if(!(visitor->lexer->values.isDerived==0))
+                        printf("\n[REFERENCE]%p\n",visitor->lexer->values.ref_var_value_POINTER);
+                    else printf("\n[REFERENCE]%s",visitor->lexer->values.ref_var_value_POINTER);
+                    //return visitor_visit(visitor, node);
+                    return node;
+                }
             }
         }
     }

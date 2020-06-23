@@ -22,6 +22,7 @@ lexer_T* init_lexer(char *contents) {
     lexer->values.hasEndAssignment = 1;
     lexer->values.hasDecorator = 1;
     lexer->values.isReference = 1;
+    lexer->values.isDerived = 1;
     lexer->values.isTerminatedMemory = 1;
     lexer->values.isSameMemory = 1;
     lexer->values.isDumped_ReAllocatedMemory = 1;
@@ -118,7 +119,7 @@ char* get_current_as_string(lexer_T* lexer) {
 }
 token_T* lexer_collect_integer_value(lexer_T* lexer) {
     if(isdigit(lexer->c)) {
-        if(!(strcmp(lexer->type,"Integer")==0)&&!(strcmp(lexer->type,"any")==0)) {
+        if(!(strcmp(lexer->type,"Integer")==0)&&!(strcmp(lexer->type,"Any")==0)&&!(strcmp(lexer->values.print_type,"any")==0)) {
           printf("\n\nErr[LINE %d]: Type of value: %s\nExpected Type: Integer.\n\n",lexer->line,lexer->type);
           exit(1);
         }
@@ -267,7 +268,15 @@ token_T* lexer_get_next_token(lexer_T* lexer) {
         switch(lexer->c) {
             //case '"':lexer_collect_string(lexer);break;
             //case '\'':lexer_collect_char_value(lexer);break;
-            case ':': return lexer_advance_with_token(lexer,init_token(TOKEN_COLON,lexer_get_current_char_as_string(lexer))); break;
+            case ':': {
+                lexer_advance(lexer);
+                switch(lexer->c) {
+                    case ':': return lexer_advance_with_token(lexer,init_token(TOKEN_ADVANCEMENT_OPERATOR,lexer_get_current_char_as_string(lexer))); break;
+                    default:return lexer_advance_with_token(lexer,init_token(TOKEN_COLON,lexer_get_current_char_as_string(lexer))); break;
+                }
+                break;
+                //return lexer_advance_with_token(lexer,init_token(TOKEN_COLON,lexer_get_current_char_as_string(lexer))); break;
+            }
             case '~': strcpy(lexer->type,"Any");return lexer_advance_with_token(lexer,init_token(TOKEN_TYPE_ANY,lexer_get_current_char_as_string(lexer)));break;
             //case 'n': lexer->values.isNeg=0;return lexer_advance_with_token(lexer,init_token(TOKEN_NEGATIVE_SYMBOL,lexer_get_current_char_as_string(lexer))); break;
             case '[': return lexer_advance_with_token(lexer,init_token(TOKEN_LSQRBRACK,lexer_get_current_char_as_string(lexer))); break;
@@ -279,7 +288,7 @@ token_T* lexer_get_next_token(lexer_T* lexer) {
             case '{': return lexer_advance_with_token(lexer,init_token(TOKEN_LCURL,lexer_get_current_char_as_string(lexer))); break;
             case '}': return lexer_advance_with_token(lexer,init_token(TOKEN_RCURL,lexer_get_current_char_as_string(lexer))); break;
             case '!': return lexer_advance_with_token(lexer,init_token(TOKEN_PREVAR_END_SYMBOL,lexer_get_current_char_as_string(lexer))); break;
-            case '_': return lexer_advance_with_token(lexer,init_token(TOKEN_NO_VALUE,lexer_get_current_char_as_string(lexer))); break;
+            //case '_': return lexer_advance_with_token(lexer,init_token(TOKEN_NO_VALUE,lexer_get_current_char_as_string(lexer))); break;
             case '\0': return init_token(TOKEN_EOF,"\0");break;
             case '=': return lexer_advance_with_token(lexer,init_token(TOKEN_EQUALS,lexer_get_current_char_as_string(lexer))); break;
             default: {
