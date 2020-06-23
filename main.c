@@ -1,9 +1,11 @@
 #include <stdio.h>
 #include <string.h>
 #include "src/lexer.h"
+#include "src/mem_management.h"
 #include "src/parser.h"
 #include "src/visitor.h"
 #include "src/file_reader.h"
+#include "src/mem_management.h"
 
 /* 
     The BPL(Brew Programming Language) source code
@@ -30,15 +32,14 @@ int main(int argc, char* args[]) {
         printf("\n\nErr: Command setup to run Brew files:\n./main.o <FILENAME>\n\n");
         exit(1);
     }
-    lexer_T* lexer;
-    for(int i = 0; i < argc; i++)
-        lexer = init_lexer(read_file(args[i]));
+    memory_struct* mem = setup_memory();
+    lexer_T* lexer = init_lexer(read_file(args[1]));
     token_T* token = (void*)0;
 
-    parser_T* parser = init_parser(lexer);
+    parser_T* parser = init_parser(lexer,mem);
     AST_T* root = parser_parse(parser);
-            
-    visitor_T* visitor = init_visitor(lexer);
+    
+    visitor_T* visitor = init_visitor(lexer,parser);
     //visitor_T* visitor = init_visitor();
     visitor_visit(visitor,root);
 

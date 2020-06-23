@@ -20,8 +20,10 @@ char* break_sequence_(visitor_T* visitor) {
 
 void assign_ref_val(visitor_T* visitor,AST_T* node,char* seq) {
     if(visitor->lexer->values.isReference==0) {
-        if(seq)
-            visitor->lexer->values.ref_var_value_POINTER = seq;
+        if(seq) {
+            visitor->lexer->values.ref_var_value_POINTER = &seq;
+            visitor->lexer->values.ref_var_value_DERIVED = *visitor->lexer->values.ref_var_value_POINTER; //visitor->lexer->values.ref_var_value_POINTER;
+        }
         visitor->lexer->values.size_of_referenced_variable[1] = sizeof(visitor->lexer->values.ref_var_value_POINTER)+strlen(seq);
     }
 }
@@ -81,9 +83,8 @@ void print_with_decorator(AST_T* ast_,visitor_T* visitor) {
                 sequence = malloc((sizeof(*ast_)+strlen(tab_sequence))*sizeof(char));
                 printf("%s%s",ast_->string_value,tab_sequence);
                 assign_ref_val(visitor, ast_,sequence);
-                free(sequence);
             }
-            sequence = Brew_Realloc_Memory_Strict(sequence, strlen(sequence), sizeof(char));
+            sequence = Brew_Realloc_Memory_Strict(sequence, strlen(sequence), sizeof(char),visitor->parser->memory);
         } else {
             sequence = malloc((sizeof(*ast_)+strlen(tab_sequence))*sizeof(char));
             printf("%s%s",ast_->string_value,tab_sequence);
@@ -132,9 +133,10 @@ static AST_T* print_function(visitor_T* visitor,AST_T** args, int size) {
     return init_ast(AST_NOOP);
 }
 
-visitor_T* init_visitor(lexer_T* lexer) {
+visitor_T* init_visitor(lexer_T* lexer,parser_T* parser) {
     visitor_T* visitor = calloc(1,sizeof(struct VISITOR_STRUCT));
     visitor->variable_definitions = (void*)0;/*calloc(1,sizeof(visitor->variable_definitions));*/
+    visitor->parser = parser;
     visitor->variable_definitions_size = 0;
     visitor->lexer = lexer;
 
@@ -207,7 +209,7 @@ AST_T* visitor_visit_variable(visitor_T* visitor,AST_T* node) {
                 if(!(strlen(visitor->lexer->values.print_type)<1)) {
                     if(!(visitor->lexer->values.isDerived==0))
                         printf("\n[REFERENCE]%p\n",visitor->lexer->values.ref_var_value_POINTER);
-                    else printf("\n[REFERENCE]%s\n",visitor->lexer->values.ref_var_value_POINTER);
+                    else printf("\n[REFERENCE]%s\n",visitor->lexer->values.ref_var_value_DERIVED);
                     return node;
                 }
             }
@@ -218,7 +220,7 @@ AST_T* visitor_visit_variable(visitor_T* visitor,AST_T* node) {
                 if(!(strlen(visitor->lexer->values.print_type)<1)) {
                     if(!(visitor->lexer->values.isDerived==0))
                         printf("\n[REFERENCE]%p\n",visitor->lexer->values.ref_var_value_POINTER);
-                    else printf("\n[REFERENCE]%s",visitor->lexer->values.ref_var_value_POINTER);
+                    else printf("\n[REFERENCE]%s",visitor->lexer->values.ref_var_value_DERIVED);
                     //return visitor_visit(visitor, node);
                     return node;
                 }

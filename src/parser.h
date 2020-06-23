@@ -2,6 +2,7 @@
 #define PARSER_H
 #include "lexer.h"
 #include "ast.h"
+#include "mem_management.h"
 
 extern int BrandNeeded_;
 
@@ -22,9 +23,10 @@ typedef struct PARSER_STRUCT {
     lexer_T* lexer;
     token_T* current_token;
     token_T* prev_token;
+    memory_struct* memory;
 } parser_T;
 
-parser_T* init_parser(lexer_T* lexer);
+parser_T* init_parser(lexer_T* lexer,memory_struct* mem);
 AST_T* parser_parse_preVarConstant(parser_T* parser);
 AST_T* parser_parse_prevar(TypeAndValue* TAV,parser_T* parser);
 AST_T* parser_parse_preVar_function_call(char* function_name,parser_T* parser);

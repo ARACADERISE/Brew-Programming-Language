@@ -4,6 +4,7 @@
 #include <ctype.h>
 #include <stdio.h>
 #include "parser.h"
+#include "mem_management.h"
 #include "visitor.h"
 #include "lexer.h"
 
@@ -33,7 +34,7 @@ static inline TypeAndValue* UpdTAV(TypeAndValue* TAV) {
     return TAV;
 }
 
-parser_T* init_parser(lexer_T* lexer) {
+parser_T* init_parser(lexer_T* lexer,memory_struct* mem) {
     parser_T* parser = calloc(1,sizeof(struct PARSER_STRUCT));
 
     TypeAndValue* TAV = calloc(1,sizeof(TypeAndValue));
@@ -42,6 +43,7 @@ parser_T* init_parser(lexer_T* lexer) {
     parser->lexer = lexer;
     parser->current_token = lexer_get_next_token(lexer);
     parser->prev_token = parser->current_token;
+    parser->memory = mem;
 
     return parser;
 }
@@ -700,7 +702,8 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
                     /* Allocating memory for the rest of the referenced variable */
                     parser->lexer->values.size_of_referenced_variable = calloc(2,sizeof(size_t));
                     parser->lexer->values.size_of_referenced_variable[0] = sizeof(parser->lexer->values.ref_var_name);
-                    parser->lexer->values.ref_var_value_POINTER = malloc(sizeof(parser->lexer->values.ref_var_value_POINTER));
+                    parser->lexer->values.ref_var_value_POINTER = Brew_Allocate_Memory(parser->lexer->values.ref_var_value_POINTER, sizeof(parser->lexer->values.ref_var_value_POINTER), sizeof(char),parser->memory);
+                    parser->lexer->values.ref_var_value_DERIVED = Brew_Allocate_Memory(parser->lexer->values.ref_var_value_DERIVED, sizeof(parser->lexer->values.ref_var_value_DERIVED), sizeof(char),parser->memory);
 
                     parser_eat(TAV,parser,TOKEN_ID);
                     /* This is for deriving the reference. */

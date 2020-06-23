@@ -6,6 +6,7 @@
 typedef struct VISITOR_STRUCT {
     AST_T** variable_definitions;
     lexer_T* lexer;
+    parser_T* parser;
     size_t variable_definitions_size;
 } visitor_T;
 
