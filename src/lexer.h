@@ -40,6 +40,7 @@ typedef struct LEXER_STRUCT {
         char* ref_for_variable;
         char* ref_var_name;
         char* ref_var_value_POINTER;
+        char* ref_var_value_DERIVED;
         size_t* size_of_referenced_variable; // Array of 2, [0] = old value size, [1] new value size
         /* For Decorators: END: Wrap: reference: working with the memory*/
         int isTerminatedMemory;
