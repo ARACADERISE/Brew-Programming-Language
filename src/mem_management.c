@@ -29,12 +29,12 @@ memory_struct* Brew_Update_Memory(memory_struct* mem,size_t sizeof_) {
         mem->total_allocated_memory,
         (1+mem->index)*sizeof_
     );
-    /* Reseting next[0] so we don't run into memory issues ourselves */
-    mem->next[0].allocated.allocated_size = 0;
-    mem->next[0].reallocated.re_allocated_size = 0;
-    mem->next[0].calloc_.calloc_index_size = 0;
-    mem->next[0].calloc_.allocated_index_size = 0;
-    mem->next[0].DeAllocate.DeAllocatedSize = 0;
+    /* Reseting memory struct so we don't run into memory issues ourselves */
+    mem->allocated.allocated_size = 0;
+    mem->reallocated.re_allocated_size = 0;
+    mem->calloc_.calloc_index_size = 0;
+    mem->calloc_.allocated_index_size = 0;
+    mem->DeAllocate.DeAllocatedSize = 0;
     mem->next[0] = *mem;
 
     return mem;
