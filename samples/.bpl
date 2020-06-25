@@ -11,7 +11,7 @@ make [S]name: "So..."{END{
             Value: "I added in some new stuff :D"
         }
     }
-    reference: n{derived}
+    reference: n
 }};
 make [S]namE: brand namE {
     memalloc(32);

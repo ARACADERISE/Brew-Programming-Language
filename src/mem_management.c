@@ -16,20 +16,6 @@ memory_struct* setup_memory() {
 
     return mem;
 }
-char* Brew_Strict_DeAllocate(void* ptr, size_t strict_size, size_t size_of_allocation, size_t auto_allocate) {
-    if(!(ptr==NULL)){
-        if(!(auto_allocate==0)) {
-            ptr = realloc(
-                ptr,
-                (strict_size-(auto_allocate/8))*size_of_allocation
-            );
-        }
-        else ptr = realloc(ptr,strict_size*size_of_allocation);
-    }
-    else ptr = malloc(0); // allocating zero bits(NULL)
-
-    return ptr;
-}
 memory_struct* Brew_Update_Memory(memory_struct* mem,size_t sizeof_) {
     
     /* I may delete this. This is just for testing */
@@ -48,11 +34,28 @@ memory_struct* Brew_Update_Memory(memory_struct* mem,size_t sizeof_) {
     mem->next[0].reallocated.re_allocated_size = 0;
     mem->next[0].calloc_.calloc_index_size = 0;
     mem->next[0].calloc_.allocated_index_size = 0;
+    mem->next[0].DeAllocate.DeAllocatedSize = 0;
     mem->next[0] = *mem;
 
     return mem;
 }
+char* Brew_Strict_DeAllocate(void* ptr, size_t strict_size, size_t size_of_allocation, size_t auto_allocate,memory_struct* mem) {
+    if(!(ptr==NULL)){
+        if(!(auto_allocate==0)) {
+            ptr = realloc(
+                ptr,
+                (strict_size-auto_allocate/8)*size_of_allocation
+            );
+            mem->DeAllocate.DeAllocatedSize = (strict_size-auto_allocate/8)*size_of_allocation;
+            mem->total_allocated_memory[mem->index] = mem->DeAllocate.DeAllocatedSize;
+            Brew_Update_Memory(mem, sizeof(mem->DeAllocate.DeAllocatedSize));
+        }
+        else ptr = realloc(ptr,strict_size*size_of_allocation);
+    }
+    else ptr = malloc(0); // allocating zero bits(NULL)
 
+    return ptr;
+}
 char* Brew_Realloc_Memory_Strict(void* ptr, size_t mem_to_assign, size_t sizeof_,memory_struct* mem) {
     size_t total_size = 0;
 

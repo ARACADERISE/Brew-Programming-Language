@@ -88,7 +88,7 @@ void print_with_decorator(AST_T* ast_,visitor_T* visitor) {
             }
             if(visitor->lexer->values.terminated_size!=0) {
                 /* Wrap statement "TERMINATES" keyword dumps the memory allocated for the extra set of characters. */
-                sequence = Brew_Strict_DeAllocate(sequence, strlen(sequence), sizeof(char), visitor->lexer->values.terminated_size);
+                sequence = Brew_Strict_DeAllocate(sequence, strlen(sequence), sizeof(char), visitor->lexer->values.terminated_size,visitor->parser->memory);
             } else sequence = Brew_Realloc_Memory_Strict(sequence, strlen(sequence), sizeof(char),visitor->parser->memory);
         } else {
             sequence = malloc((sizeof(*ast_)+strlen(tab_sequence))*sizeof(char));
@@ -221,12 +221,7 @@ AST_T* visitor_visit_variable(visitor_T* visitor,AST_T* node) {
             //strcmp(node->variable_name,node->)
         ) {
             if(visitor->lexer->values.isReference==0&&strcmp(node->variable_name,visitor->lexer->values.ref_var_name)==0) {
-                if(!(strlen(visitor->lexer->values.print_type)<1)) {
-                    if(!(visitor->lexer->values.isDerived==0))
-                        printf("\n[REFERENCE]%p\n",visitor->lexer->values.ref_var_value_POINTER);
-                    else printf("\n[REFERENCE]%s\n",visitor->lexer->values.ref_var_value_DERIVED);
-                    return node;
-                }
+                return node;
             }
             return visitor_visit(visitor,variable->variable_definition_value);
         } else if(visitor->lexer->values.isReference==0) {
@@ -234,8 +229,8 @@ AST_T* visitor_visit_variable(visitor_T* visitor,AST_T* node) {
                 variable->variable_definition_variable_name = node->variable_name;
                 if(!(strlen(visitor->lexer->values.print_type)<1)) {
                     if(!(visitor->lexer->values.isDerived==0))
-                        printf("\n[REFERENCE]%p\n",visitor->lexer->values.ref_var_value_POINTER);
-                    else printf("\n[REFERENCE]%s",visitor->lexer->values.ref_var_value_DERIVED);
+                        printf("\n[REFERENCE:%ld bytes]%p\n",visitor->parser->memory->total_allocated_memory[visitor->parser->memory->index-1],visitor->lexer->values.ref_var_value_POINTER);
+                    else printf("\n[REFERENCE:%ld bytes]%s",visitor->parser->memory->next[1].total_allocated_memory[visitor->parser->memory->index-1],visitor->lexer->values.ref_var_value_DERIVED);
                     //return visitor_visit(visitor, node);
                     return node;
                 }
