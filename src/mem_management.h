@@ -21,6 +21,7 @@ typedef struct MEM_STRUCT {
 
 memory_struct* setup_memory();
 
+char* Brew_Strict_DeAllocate(void* ptr, size_t strict_size, size_t size_of_allocation, size_t auto_allocate);
 /* Stricly reallocates memory depending on ptr */
 char* Brew_Realloc_Memory_Strict(void* ptr, size_t mem_to_assign, size_t sizeof_,memory_struct* mem);
 /* Lazily reallocates memory. Doesn't care if it is above or below what the ptr needs. */

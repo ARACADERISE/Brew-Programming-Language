@@ -114,10 +114,10 @@ AST_T* parser_parse_statement(parser_T* parser) {
     return noop;
 }
 AST_T* parser_parse_memalloc_function_call(TypeAndValue* TAV, parser_T* parser, char* b_v_n) {
-    AST_T* brand_var = init_ast(AST_MEMALLOC_FUNCTION_CALL);
-    brand_var->bits_to_assign = lexer_get_bit_assignment(parser->lexer);
-    brand_var->brand_var_name = b_v_n;
-    brand_var->_func_name = "memalloc";
+    AST_T* ast = init_ast(AST_MEMALLOC_FUNCTION_CALL);
+    ast->bits_to_assign = lexer_get_bit_assignment(parser->lexer);
+    ast->brand_var_name = b_v_n;
+    ast->_func_name = "memalloc";
 
     parser_eat(TAV,parser,TOKEN_LPARENT);
 
@@ -141,11 +141,15 @@ AST_T* parser_parse_memalloc_function_call(TypeAndValue* TAV, parser_T* parser, 
     }
 
     /* Needs to be done here, or else the visitor would never visit. */
-    visitor_T* visitor = init_visitor();
-    return visitor_visit_memalloc_function_call(visitor,brand_var);
+    //visitor_T* visitor = init_visitor();
+    //return visitor_visit_memalloc_function_call(visitor,brand_var);
+    //visitor_visit_memalloc_function_call(visitor, ast);
+    return ast;
 }
 AST_T* parser_parse_brand_variable(TypeAndValue* TAV,parser_T* parser,char* variable_definition_variable_name) {
     if(BrandNeeded_==0) {
+        AST_T* var_def = init_ast(AST_VARIABLE_DEFINITION);
+
         parser_eat(TAV,parser,TOKEN_ID);
         char* brand_var_name = parser->current_token->value;
         parser_eat(TAV,parser,TOKEN_ID);
@@ -492,15 +496,13 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
     } else parser->lexer->values.isNeg=1;*/
 
     AST_T* variable_definition = init_ast(AST_VARIABLE_DEFINITION);
+    variable_definition->variable_definition_variable_name = variable_definition_variable_name;
     if(BrandNeeded_==0||strcmp(parser->current_token->value,"brand")==0) {
         BrandNeeded_=0;
-        parser_parse_brand_variable(TAV,parser,variable_definition_variable_name);
-    } else {
-        AST_T* variable_definition_value = parser_parse_expr(parser);
-        variable_definition->variable_definition_value = variable_definition_value;
+        return parser_parse_brand_variable(TAV,parser,variable_definition_variable_name);
     }
-
-    variable_definition->variable_definition_variable_name = variable_definition_variable_name;
+    AST_T* variable_definition_value = parser_parse_expr(parser);
+    variable_definition->variable_definition_value = variable_definition_value;
 
     if(parser->current_token->type==TOKEN_LCURL) {
         parser->lexer->values.hasDecorator = 0;
@@ -559,12 +561,22 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
                                     printf("\n\nErr[LINE %d]: Cannot have odd amounts of quotes.\n\n",parser->lexer->line);
                                     exit(1);
                                 }
-                            } else parser->lexer->values.ammountOfQuotes = 1;
+                            } else parser->lexer->values.ammountOfQuotes = 2;
                             parser_eat(TAV,parser,TOKEN_LSQRBRACK);
                             parser_eat(TAV,parser,TOKEN_RSQRBRACK);
                         } else {
-                            parser->lexer->values.ammountOfQuotes = 1;
+                            parser->lexer->values.ammountOfQuotes = 2;
                             parser->lexer->values.wrapStringWith[2] = '"';
+                        }
+                        if(parser->current_token->type==TOKEN_ADVANCEMENT_OPERATOR) {
+                            parser_eat(TAV,parser,TOKEN_ADVANCEMENT_OPERATOR);
+                            parser_eat(TAV,parser,TOKEN_LSQRBRACK);
+                            if(strcmp(parser->current_token->value,"TERMINATE")==0) {
+                                parser_eat(TAV,parser,TOKEN_ID);
+                                parser->lexer->values.isTERMINATED = 0;   
+                                parser->lexer->values.terminated_size = parser->lexer->values.ammountOfQuotes*8;
+                            }
+                            parser_eat(TAV,parser,TOKEN_RSQRBRACK);
                         }
                         if(!(parser->current_token->type==TOKEN_RCURL)) goto redo;
                         else parser_eat(TAV,parser,TOKEN_RCURL);
@@ -702,8 +714,8 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
                     /* Allocating memory for the rest of the referenced variable */
                     parser->lexer->values.size_of_referenced_variable = calloc(2,sizeof(size_t));
                     parser->lexer->values.size_of_referenced_variable[0] = sizeof(parser->lexer->values.ref_var_name);
-                    parser->lexer->values.ref_var_value_POINTER = Brew_Allocate_Memory(parser->lexer->values.ref_var_value_POINTER, sizeof(parser->lexer->values.ref_var_value_POINTER), sizeof(char),parser->memory);
-                    parser->lexer->values.ref_var_value_DERIVED = Brew_Allocate_Memory(parser->lexer->values.ref_var_value_DERIVED, sizeof(parser->lexer->values.ref_var_value_DERIVED), sizeof(char),parser->memory);
+                    parser->lexer->values.ref_var_value_POINTER = Brew_Allocate_Memory(parser->lexer->values.ref_var_value_POINTER, sizeof(parser->lexer->values.ref_var_value_POINTER), 1,parser->memory);
+                    parser->lexer->values.ref_var_value_DERIVED = Brew_Allocate_Memory(parser->lexer->values.ref_var_value_DERIVED, sizeof(parser->lexer->values.ref_var_value_DERIVED), 1,parser->memory);
 
                     parser_eat(TAV,parser,TOKEN_ID);
                     /* This is for deriving the reference. */

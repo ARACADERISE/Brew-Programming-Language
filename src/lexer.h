@@ -31,6 +31,8 @@ typedef struct LEXER_STRUCT {
         /* For Decorators: END: Wrap */
         int isEND;
         int isWrapped;
+        int isTERMINATED;
+        size_t terminated_size;
         char* wrapStringWith;
         int breakAmmountOfTimes;
         int ammountOfQuotes;
