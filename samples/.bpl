@@ -13,7 +13,7 @@ make [S]name: "So..."{END{
     }
     reference: n
 }};
-make [S]namE: brand namE {
-    memalloc(32);
+make [S]namE: brand namE{
+    memalloc
 };
-print[any](name,n);
+print[any](name,n,namE);

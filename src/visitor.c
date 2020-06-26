@@ -150,7 +150,6 @@ visitor_T* init_visitor(lexer_T* lexer,parser_T* parser) {
 AST_T* visitor_visit(visitor_T* visitor,AST_T* node) {
     switch(node->type) {
         case AST_PREVAR_DEFINITION: return visitor_visit_prevar_definition(visitor,node);break;
-        case AST_MEMALLOC_FUNCTION_CALL: return visitor_visit_memalloc_function_call(visitor,node);break;
         case AST_VARIABLE_DEFINITION: return visitor_visit_variable_definition(visitor,node);break;
         case AST_PREVAR: return 0;break;
         case AST_VARIABLE: return visitor_visit_variable(visitor,node);break;
@@ -169,18 +168,6 @@ AST_T* visitor_visit(visitor_T* visitor,AST_T* node) {
 }
 void ALLOCATE_VAR_DEFINITION_MEMORY(visitor_T* visitor) {
     visitor->variable_definitions = calloc(1,sizeof(struct AST_T*));
-}
-AST_T* visitor_visit_memalloc_function_call(visitor_T* visitor,AST_T* node) {
-
-    AST_T* var_def = parser_parse_expr(visitor->parser);
-    
-    node->variable_definition_value = malloc(node->bits_to_assign*sizeof(*node->variable_definition_value));
-    node->variable_definition_value->string_value = malloc(node->bits_to_assign*sizeof(char));
-    node->variable_definition_value = var_def;
-    node->variable_definition_value->variable_definition_variable_name = node->brand_var_name;
-    node->variable_name = node->variable_definition_value->variable_definition_variable_name;
-
-    return node;
 }
 AST_T* visitor_visit_prevar_definition(visitor_T* visitor,AST_T* node) {
 }
@@ -236,9 +223,8 @@ AST_T* visitor_visit_variable(visitor_T* visitor,AST_T* node) {
                 }
             }
         }
-        printf("%s",variable->variable_definition_variable_name);
     }
-    printf("\n\nErr: %s not declared/made or is a constant(varconst)\n\n",node->variable_name);
+    printf("\n\nErr[LINE %d]: Undefined name '%s'\n\n",visitor->lexer->line,node->variable_name);
     return node;
 }
 AST_T* visitor_visit_string(visitor_T* visitor,AST_T* node) {

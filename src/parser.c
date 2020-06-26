@@ -113,42 +113,8 @@ AST_T* parser_parse_statement(parser_T* parser) {
     noop->total_lines = parser->lexer->line;
     return noop;
 }
-AST_T* parser_parse_memalloc_function_call(TypeAndValue* TAV, parser_T* parser, char* b_v_n) {
-    AST_T* ast = init_ast(AST_MEMALLOC_FUNCTION_CALL);
-    ast->bits_to_assign = lexer_get_bit_assignment(parser->lexer);
-    ast->brand_var_name = b_v_n;
-    ast->_func_name = "memalloc";
-
-    parser_eat(TAV,parser,TOKEN_LPARENT);
-
-    if(parser->current_token->type==TOKEN_RPARENT)
-        parser_eat(TAV,parser,TOKEN_RPARENT);
-    else {
-        printf("\n\nErr[LINE %d]: Missing ')'.\n\n",parser->lexer->line);
-        exit(1);
-    }
-    if(parser->current_token->type==TOKEN_SEMI)
-        parser_eat(TAV,parser,TOKEN_SEMI);
-    else {
-        printf("\n\nErr[LINE %d]: Abrupt end to function call.\n\n",parser->lexer->line);
-        exit(1);
-    }
-    if(parser->current_token->type==TOKEN_RCURL)
-        parser_eat(TAV,parser,TOKEN_RCURL);
-    else {
-        printf("\n\nErr[LINE %d]: Missing '}'.\n\n",parser->lexer->line);
-        exit(1);
-    }
-
-    /* Needs to be done here, or else the visitor would never visit. */
-    //visitor_T* visitor = init_visitor();
-    //return visitor_visit_memalloc_function_call(visitor,brand_var);
-    //visitor_visit_memalloc_function_call(visitor, ast);
-    return ast;
-}
-AST_T* parser_parse_brand_variable(TypeAndValue* TAV,parser_T* parser,char* variable_definition_variable_name) {
+void parser_parse_brand_variable(AST_T* variable,TypeAndValue* TAV,parser_T* parser,char* variable_definition_variable_name) {
     if(BrandNeeded_==0) {
-        AST_T* var_def = init_ast(AST_VARIABLE_DEFINITION);
 
         parser_eat(TAV,parser,TOKEN_ID);
         char* brand_var_name = parser->current_token->value;
@@ -161,24 +127,21 @@ AST_T* parser_parse_brand_variable(TypeAndValue* TAV,parser_T* parser,char* vari
                 printf("\n\nErr[LINE %d]: Missing '{'.\n\n",parser->lexer->line);
                 exit(1);
             }
-
             if(parser->current_token->type==TOKEN_RCURL) {
                 printf("\n\nErr[LINE %d]: brand body is empty. Example of brand keyword:\nmake [S]name: brand name {\n\tmemalloc(32);\n};\n\n",parser->lexer->line);
                 exit(1);
             }
-            
-            char* mem_function_name = parser->current_token->value;
-            parser_eat(TAV,parser,TOKEN_ID);
-            
-            BrandNeeded_=1;
-            if(strcmp(mem_function_name,"memalloc")==0)
-                return parser_parse_memalloc_function_call(TAV,parser,brand_var_name);
+            if(strcmp(parser->current_token->value,"memalloc")==0) {
+                variable->isBranded = 0;
+                parser_eat(TAV,parser,TOKEN_ID);
+                variable->variable_definition_variable_name = Brew_Allocate_Memory(variable->variable_definition_variable_name, 64, sizeof(variable->variable_definition_variable_name), parser->memory);
+            }
+            parser_eat(TAV,parser,TOKEN_RCURL);
         } else {
             printf("\n\nErr[LINE %d]: Branding %s instead of %s.\n\n",parser->lexer->line,brand_var_name,variable_definition_variable_name);
             exit(1);
         }
     }
-    return init_ast(AST_NOOP);
 }
 AST_T* parser_parse_preVarConstant(parser_T* parser) {
     TypeAndValue* TAV = calloc(1,sizeof(TypeAndValue));
@@ -496,11 +459,11 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
     } else parser->lexer->values.isNeg=1;*/
 
     AST_T* variable_definition = init_ast(AST_VARIABLE_DEFINITION);
-    variable_definition->variable_definition_variable_name = variable_definition_variable_name;
     if(BrandNeeded_==0||strcmp(parser->current_token->value,"brand")==0) {
         BrandNeeded_=0;
-        return parser_parse_brand_variable(TAV,parser,variable_definition_variable_name);
+        parser_parse_brand_variable(variable_definition,TAV,parser,variable_definition_variable_name);
     }
+    variable_definition->variable_definition_variable_name = variable_definition_variable_name;
     AST_T* variable_definition_value = parser_parse_expr(parser);
     variable_definition->variable_definition_value = variable_definition_value;
 
@@ -861,6 +824,10 @@ AST_T* parser_parse_id(parser_T* parser) {
     
     if(strcmp(parser->current_token->value,"varconst")==0)
         return parser_parse_preVarConstant(parser);
+    else if(strcmp(parser->current_token->value,"enum")==0){
+        printf("HERE");
+        return parser_parse_preVarConstant(parser);
+    }
     else if(strcmp(parser->current_token->value,"make")==0){
         return parser_parse_variable_definition(parser);
     }

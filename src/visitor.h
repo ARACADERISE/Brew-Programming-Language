@@ -11,7 +11,6 @@ typedef struct VISITOR_STRUCT {
 } visitor_T;
 
 visitor_T* init_visitor();
-AST_T* visitor_visit_memalloc_function_call(visitor_T* visitor,AST_T* node);
 visitor_T* init_visitor();
 AST_T* visitor_visit_prevar_definition(visitor_T* visitor,AST_T* node);
 AST_T* visitor_visit_prevar_function_call(visitor_T* visitor,AST_T* node);
