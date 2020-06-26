@@ -8,7 +8,7 @@ extern bool BrandNeeded;
 
 typedef struct LEXER_STRUCT {
     int line;
-    char c, type[15];
+    char c, type[15], current_word[1000];
     unsigned int i;
     char *contents;
 

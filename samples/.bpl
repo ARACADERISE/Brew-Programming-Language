@@ -16,4 +16,5 @@ make [S]name: "So..."{END{
 make [S]namE: brand namE{
     memalloc
 };
+make [string] name: "AIDAN";
 print[any](name,n,namE);

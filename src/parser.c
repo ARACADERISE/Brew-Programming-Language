@@ -8,6 +8,23 @@
 #include "visitor.h"
 #include "lexer.h"
 
+const char* print_KEYWORD = "print";
+const char* Print_KEYWORD = "Print";
+const char* make_KEYWORD = "make";
+const char* string_KEYWORD = "string";
+const char* int_KEYWORD = "int";
+const char* char_KEYWORD = "char";
+const char* any_KEYWORD = "any";
+const char* brand_KEYWORD = "brand";
+const char* END_KEYWORD = "END";
+const char* Reform_KEYWORD = "Reform";
+const char* reference_KEYWORD = "reference";
+const char* PushValue_KEYWORD = "PushValue";
+const char* To_KEYWORD = "To";
+const char* value_KEYWORD = "value";
+const char* alloc_KEYWORD = "alloc";
+const char* memalloc_KEYWORD = "memalloc";
+
 //static bool IsPre = false;
 int BrandNeeded_ = 1;
 static int isSigned=1; // false by default
@@ -394,7 +411,14 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
 
     if(parser->current_token->type == TOKEN_LSQRBRACK) {
         parser_eat(TAV,parser,TOKEN_LSQRBRACK);
-        if(!(
+        if(
+                strcmp(parser->current_token->value,string_KEYWORD)==0
+            ) {
+                //parser_eat(TAV,parser,TOKEN_ID);
+                parser->lexer->c = 'S';
+                lexer_get_next_token(parser->lexer);
+            }
+        else if(!(
             parser->current_token->type==TOKEN_TYPE_STRING||
             parser->current_token->type==TOKEN_TYPE_INT||
             parser->current_token->type==TOKEN_TYPE_CHAR||
@@ -416,6 +440,7 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
     }
     
     int type;
+    printf("%d\n",parser->current_token->type);
     if(parser->current_token->type==TOKEN_TYPE_STRING) /* = [S]*/ 
         parser_eat(TAV,parser,TOKEN_TYPE_STRING);
     else if(parser->current_token->type==TOKEN_TYPE_INT) /* = [I]*/ {
@@ -432,14 +457,14 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
     else if(parser->current_token->type == TOKEN_NO_VALUE)
         parser_eat(TAV,parser, TOKEN_NO_VALUE);
     else {
-        printf("\n\nErr[LINE %d]: make [TYPE] param is empty.\nThe [TYPE] param needs a type of S(STRING) I(INTEGER) C(CHAR) A(ANY), it cannot be left empty.\n\n",parser->lexer->line);
+        printf("\n\nErr[LINE %d]: make [TYPE] param is empty.\nThe [TYPE] param needs a type of S(STRING) I(INTEGER) C(CHAR) A(ANY), it cannot be left empty\n\n",parser->lexer->line);
         exit(1);
     }
 
     if(parser->current_token->type == TOKEN_RSQRBRACK)
         parser_eat(TAV,parser, TOKEN_RSQRBRACK);
     else {
-        printf("\n\nErr[LINE %d]: Missing right square bracket(']') for [TYPE] param.\n\n",parser->lexer->line);
+        printf("\n\nErr[LINE %d]: Missing right square bracket(']') for [TYPE] param.%d\n\n",parser->lexer->line);
         exit(1);
     }
     char* variable_definition_variable_name = parser->current_token->value;
