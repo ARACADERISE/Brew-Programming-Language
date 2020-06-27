@@ -414,9 +414,7 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
         if(
                 strcmp(parser->current_token->value,string_KEYWORD)==0
             ) {
-                //parser_eat(TAV,parser,TOKEN_ID);
-                parser->lexer->c = 'S';
-                lexer_get_next_token(parser->lexer);
+                parser_eat(TAV,parser,TOKEN_ID);
             }
         else if(!(
             parser->current_token->type==TOKEN_TYPE_STRING||
@@ -439,13 +437,12 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
         }
     }
     
-    int type;
-    printf("%d\n",parser->current_token->type);
+    //int type;
     if(parser->current_token->type==TOKEN_TYPE_STRING) /* = [S]*/ 
         parser_eat(TAV,parser,TOKEN_TYPE_STRING);
     else if(parser->current_token->type==TOKEN_TYPE_INT) /* = [I]*/ {
         parser_eat(TAV,parser,TOKEN_TYPE_INT);
-        type = TOKEN_TYPE_INT;
+        //type = TOKEN_TYPE_INT;
     }
     else if(parser->current_token->type==TOKEN_TYPE_CHAR) /* = [C]*/
         parser_eat(TAV,parser,TOKEN_TYPE_CHAR);
@@ -464,7 +461,7 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
     if(parser->current_token->type == TOKEN_RSQRBRACK)
         parser_eat(TAV,parser, TOKEN_RSQRBRACK);
     else {
-        printf("\n\nErr[LINE %d]: Missing right square bracket(']') for [TYPE] param.%d\n\n",parser->lexer->line);
+        printf("\n\nErr[LINE %d]: Missing right square bracket(']') for [TYPE] param\n\n",parser->lexer->line);
         exit(1);
     }
     char* variable_definition_variable_name = parser->current_token->value;
@@ -487,6 +484,7 @@ AST_T* parser_parse_variable_definition(parser_T* parser) {
     if(BrandNeeded_==0||strcmp(parser->current_token->value,"brand")==0) {
         BrandNeeded_=0;
         parser_parse_brand_variable(variable_definition,TAV,parser,variable_definition_variable_name);
+        BrandNeeded_ = 1;
     }
     variable_definition->variable_definition_variable_name = variable_definition_variable_name;
     AST_T* variable_definition_value = parser_parse_expr(parser);
