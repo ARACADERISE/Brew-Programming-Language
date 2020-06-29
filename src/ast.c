@@ -13,6 +13,7 @@ AST_T* init_ast(int type) {
     ast->PreVar_value = (void*)9;
 
     /* For brand keyword */
+    ast->isBranded = 1;
     ast->brand_var_name = (void*)0;
     ast->_func_name = (void*)0;
     ast->bits_to_assign = 0;

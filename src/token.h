@@ -10,6 +10,7 @@ typedef struct TOKEN_STRUCT {
         TOKEN_STRING,
         TOKEN_INT,
         TOKEN_TYPE_STRING,
+        TOKEN_TYPE_string,
         TOKEN_TYPE_STRING_VALUE,
         TOKEN_TYPE_INT,
         TOKEN_TYPE_INT_VALUE,

@@ -1,6 +1,6 @@
 make [S]name: "So..."{END{
     Wrap{
-        quotes[]
+        quotes[4]::[TERMINATE]
     }
     Reform{
         alloc: 64
@@ -13,4 +13,8 @@ make [S]name: "So..."{END{
     }
     reference: n
 }};
-print[any](name,n);
+make [S]namE: brand namE{
+    memalloc
+};
+make [I]nA: 10;
+print[any](name,n,nA);

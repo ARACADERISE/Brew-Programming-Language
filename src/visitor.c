@@ -21,8 +21,8 @@ char* break_sequence_(visitor_T* visitor) {
 void assign_ref_val(visitor_T* visitor,AST_T* node,char* seq) {
     if(visitor->lexer->values.isReference==0) {
         if(seq) {
-            visitor->lexer->values.ref_var_value_POINTER = &seq;
-            visitor->lexer->values.ref_var_value_DERIVED = *visitor->lexer->values.ref_var_value_POINTER; //visitor->lexer->values.ref_var_value_POINTER;
+            visitor->lexer->values.ref_var_value_POINTER = seq;
+            visitor->lexer->values.ref_var_value_DERIVED = visitor->lexer->values.ref_var_value_POINTER; //visitor->lexer->values.ref_var_value_POINTER;
         }
         visitor->lexer->values.size_of_referenced_variable[1] = sizeof(visitor->lexer->values.ref_var_value_POINTER)+strlen(seq);
     }
@@ -43,6 +43,7 @@ void print_with_decorator(AST_T* ast_,visitor_T* visitor) {
                     char* quote_sequence = calloc(visitor->lexer->values.ammountOfQuotes,sizeof(char));
                     break_sequence = break_sequence_(visitor);
                     if(!(visitor->lexer->values.ammountOfQuotes==1)) {
+                        if(visitor->lexer->values.ammountOfQuotes==2)visitor->lexer->values.ammountOfQuotes=1;
                         for(int i = 0; i < visitor->lexer->values.ammountOfQuotes; i++) {
                             quote_sequence[i] = visitor->lexer->values.wrapStringWith[2]; // '"'
                         }
@@ -58,6 +59,7 @@ void print_with_decorator(AST_T* ast_,visitor_T* visitor) {
                     }
                 } else if(visitor->lexer->values.ammountOfQuotes>0) {
                     char* quote_sequence = calloc(visitor->lexer->values.ammountOfQuotes,sizeof(char));
+                    if(visitor->lexer->values.ammountOfQuotes==2) visitor->lexer->values.ammountOfQuotes=1;
 
                     for(int i = 0; i < visitor->lexer->values.ammountOfQuotes; i++) {
                         quote_sequence[i] = visitor->lexer->values.wrapStringWith[2];
@@ -84,7 +86,10 @@ void print_with_decorator(AST_T* ast_,visitor_T* visitor) {
                 printf("%s%s",ast_->string_value,tab_sequence);
                 assign_ref_val(visitor, ast_,sequence);
             }
-            sequence = Brew_Realloc_Memory_Strict(sequence, strlen(sequence), sizeof(char),visitor->parser->memory);
+            if(visitor->lexer->values.terminated_size!=0) {
+                /* Wrap statement "TERMINATES" keyword dumps the memory allocated for the extra set of characters. */
+                sequence = Brew_Strict_DeAllocate(sequence, strlen(sequence), sizeof(char), visitor->lexer->values.terminated_size,visitor->parser->memory);
+            } else sequence = Brew_Realloc_Memory_Strict(sequence, strlen(sequence), sizeof(char),visitor->parser->memory);
         } else {
             sequence = malloc((sizeof(*ast_)+strlen(tab_sequence))*sizeof(char));
             printf("%s%s",ast_->string_value,tab_sequence);
@@ -145,7 +150,6 @@ visitor_T* init_visitor(lexer_T* lexer,parser_T* parser) {
 AST_T* visitor_visit(visitor_T* visitor,AST_T* node) {
     switch(node->type) {
         case AST_PREVAR_DEFINITION: return visitor_visit_prevar_definition(visitor,node);break;
-        //case AST_MEMALLOC_FUNCTION_CALL: return visitor_visit_memalloc_function_call(node);break;
         case AST_VARIABLE_DEFINITION: return visitor_visit_variable_definition(visitor,node);break;
         case AST_PREVAR: return 0;break;
         case AST_VARIABLE: return visitor_visit_variable(visitor,node);break;
@@ -164,10 +168,6 @@ AST_T* visitor_visit(visitor_T* visitor,AST_T* node) {
 }
 void ALLOCATE_VAR_DEFINITION_MEMORY(visitor_T* visitor) {
     visitor->variable_definitions = calloc(1,sizeof(struct AST_T*));
-}
-AST_T* visitor_visit_memalloc_function_call(visitor_T* visitor,AST_T* node) {
-  ALLOCATE_VAR_DEFINITION_MEMORY(visitor);
-  //printf("ALLOCATIN MEMORY FOR %s",node->brand_var_name);
 }
 AST_T* visitor_visit_prevar_definition(visitor_T* visitor,AST_T* node) {
 }
@@ -204,14 +204,11 @@ AST_T* visitor_visit_variable(visitor_T* visitor,AST_T* node) {
         AST_T* variable = visitor->variable_definitions[i];
         if(
             strcmp(variable->variable_definition_variable_name,node->variable_name)==0
+            //node->variable_definition_value->variable_definition_variable_name[0]==node->variable_name[0]
+            //strcmp(node->variable_name,node->)
         ) {
             if(visitor->lexer->values.isReference==0&&strcmp(node->variable_name,visitor->lexer->values.ref_var_name)==0) {
-                if(!(strlen(visitor->lexer->values.print_type)<1)) {
-                    if(!(visitor->lexer->values.isDerived==0))
-                        printf("\n[REFERENCE]%p\n",visitor->lexer->values.ref_var_value_POINTER);
-                    else printf("\n[REFERENCE]%s\n",visitor->lexer->values.ref_var_value_DERIVED);
-                    return node;
-                }
+                return node;
             }
             return visitor_visit(visitor,variable->variable_definition_value);
         } else if(visitor->lexer->values.isReference==0) {
@@ -219,15 +216,15 @@ AST_T* visitor_visit_variable(visitor_T* visitor,AST_T* node) {
                 variable->variable_definition_variable_name = node->variable_name;
                 if(!(strlen(visitor->lexer->values.print_type)<1)) {
                     if(!(visitor->lexer->values.isDerived==0))
-                        printf("\n[REFERENCE]%p\n",visitor->lexer->values.ref_var_value_POINTER);
-                    else printf("\n[REFERENCE]%s",visitor->lexer->values.ref_var_value_DERIVED);
+                        printf("\n[REFERENCE:%ld bytes]%p\n",visitor->parser->memory->total_allocated_memory[visitor->parser->memory->index-1],visitor->lexer->values.ref_var_value_POINTER);
+                    else printf("\n[REFERENCE:%ld bytes]%s",visitor->parser->memory->next[1].total_allocated_memory[visitor->parser->memory->index-1],visitor->lexer->values.ref_var_value_DERIVED);
                     //return visitor_visit(visitor, node);
                     return node;
                 }
             }
         }
     }
-    printf("\n\nErr: %s not declared/made or is a constant(varconst)\n\n",node->variable_name);
+    printf("\n\nErr[LINE %d]: Undefined name '%s'\n\n",visitor->lexer->line,node->variable_name);
     return node;
 }
 AST_T* visitor_visit_string(visitor_T* visitor,AST_T* node) {

@@ -7,7 +7,7 @@ typedef struct AST_STRUCT {
     enum {
         AST_VARIABLE_DEFINITION,
         AST_PREVAR_DEFINITION,
-        AST_MEMALLOC_FUNCTION_CALL,
+        //AST_MEMALLOC_FUNCTION_CALL,
         AST_VARIABLE,
         AST_PREVAR,
         AST_FUNCTION_CALL,
@@ -28,6 +28,7 @@ typedef struct AST_STRUCT {
     struct AST_STRUCT* PreVar_value;
 
     /* For Brand. */
+    int isBranded;
     char* brand_var_name;
     char* _func_name;
     size_t bits_to_assign;

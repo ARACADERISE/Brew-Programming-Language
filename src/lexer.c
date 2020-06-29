@@ -27,6 +27,8 @@ lexer_T* init_lexer(char *contents) {
     lexer->values.isSameMemory = 1;
     lexer->values.isDumped_ReAllocatedMemory = 1;
     lexer->values.isPushValue = 1;
+    lexer->values.isTERMINATED = 1;
+    lexer->values.terminated_size = 0;
 
     return lexer;
 }
