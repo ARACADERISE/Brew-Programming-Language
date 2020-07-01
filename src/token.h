@@ -9,6 +9,7 @@ typedef struct TOKEN_STRUCT {
         TOKEN_COMMA,
         TOKEN_STRING,
         TOKEN_INT,
+        TOKEN_CHAR,
         TOKEN_TYPE_STRING,
         TOKEN_TYPE_string,
         TOKEN_TYPE_STRING_VALUE,

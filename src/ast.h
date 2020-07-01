@@ -19,6 +19,9 @@ typedef struct AST_STRUCT {
         AST_NOOP
     } type;
 
+    /* Checking to see if it is a defined variable */
+    int IsDefinedVar;
+
     /* For AST_VARIBALE_DEFINITION */
     char* variable_definition_variable_name;
     struct AST_STRUCT* variable_definition_value;

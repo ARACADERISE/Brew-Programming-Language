@@ -120,15 +120,21 @@ char* get_current_as_string(lexer_T* lexer) {
     return val;
 }
 token_T* lexer_collect_integer_value(lexer_T* lexer) {
-    if(isdigit(lexer->c)) {
-        if(!(strcmp(lexer->type,"Integer")==0)&&!(strcmp(lexer->type,"Any")==0)&&!(strcmp(lexer->values.print_type,"any")==0)) {
-          printf("\n\nErr[LINE %d]: Type of value: %s\nExpected Type: Integer.\n\n",lexer->line,lexer->type);
-          exit(1);
-        }
-    }
     char* value = calloc(1,sizeof(char));
     value[0]='\0';
     int multNeg;
+
+    if(isdigit(lexer->c)) {
+        if((!(strcmp(lexer->type,"Integer")==0)&&!(strcmp(lexer->type,"Any")==0)&&!(strcmp(lexer->values.print_type,"any")==0))) {
+            if(!(strcmp(lexer->values.print_type,"int")==0)) {
+                printf("\n\nErr[LINE %d]: Type of value: %s\nExpected Type: Integer.\n\n",lexer->line,(strlen(lexer->type)>0)?lexer->type : lexer->values.print_type);
+                exit(1);
+            }
+            else goto start;
+        }
+    }
+
+    start:
     if(lexer->values.isNeg==0) {
         multNeg=-1;
         //lexer_advance(lexer);
@@ -162,19 +168,20 @@ int lexer_get_bit_assignment(lexer_T* lexer) {
     return atoi(number);
 }
 token_T* lexer_collect_char_value(lexer_T* lexer) {
-    if(!(strcmp(lexer->type,"Char")==0)&&!(strcmp(lexer->type,"Any")==0)) {
-        if(lexer->values.print_type!=0) {
-            printf("\n\nErr[LINE %d]: Print is of type %s. Attempted to print type char\n\n",lexer->line,lexer->values.print_type);
-            exit(1);
-        }
-        printf("\n\nErr[LINE %d]: Type of value: %s\nExpected Type: Char.\n\n",lexer->line,lexer->type);
-        exit(1);
-    }
-    lexer_advance(lexer);
     int ammount = 0;
     char* val = calloc(1,sizeof(char));
     val[0]='\0';
 
+    if(!(strcmp(lexer->type,"Char")==0)&&!(strcmp(lexer->type,"Any")==0)) {
+        if(!(strcmp(lexer->values.print_type,"char")==0)) {
+            printf("\n\nErr[LINE %d]: Print is of type %s. Attempted to print type char\n\n",lexer->line,lexer->values.print_type);
+            exit(1);
+        }
+        else goto start;
+    }
+
+    start:
+    lexer_advance(lexer);
     while(lexer->c != '\'') {
         if(ammount==1) {
             printf("\n\nErr[LINE %d]: Type [C](%s) has too many values to it.\n\n",lexer->line,lexer->type);
@@ -190,7 +197,7 @@ token_T* lexer_collect_char_value(lexer_T* lexer) {
         ammount++;
     }
     lexer_advance(lexer);
-    return init_token(TOKEN_TYPE_CHAR_VALUE,val);
+    return init_token(TOKEN_CHAR,val);
 }
 int lexer_collect_ammount(lexer_T* lexer) {
     char* ammount = calloc(1,sizeof(char));

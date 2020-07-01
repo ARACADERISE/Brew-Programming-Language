@@ -313,6 +313,7 @@ AST_T* parser_parse_expr(parser_T* parser) {
     switch(parser->current_token->type) {
         case TOKEN_STRING: return parser_parse_string(TAV,parser);
         case TOKEN_INT: return parser_parse_int(TAV,parser);
+        case TOKEN_CHAR: printf("HERE");break;
         case TOKEN_ID: return parser_parse_id(parser);
     }
 
@@ -762,7 +763,7 @@ AST_T* parser_parse_variable(TypeAndValue* TAV,parser_T* parser) {
     return parser_parse_function_call(parser);*/
     /*char* token_value = parser->current_token->value;
     parser_eat(TAV,parser, TOKEN_ID);
-    
+
     if(parser->current_token->type==TOKEN_LSQRBRACK) {
         parser_eat(TAV,parser, TOKEN_LSQRBRACK);
     }
@@ -771,7 +772,7 @@ AST_T* parser_parse_variable(TypeAndValue* TAV,parser_T* parser) {
     }
 
     if(parser->current_token->type == TOKEN_LPARENT)
-        return parser_parse_function_call(parser);
+        return parser_parse_function_call(token_value,parser);
     
     AST_T* ast_variable = init_ast(AST_VARIABLE);
     ast_variable->variable_name = token_value;

@@ -29,7 +29,7 @@ void assign_ref_val(visitor_T* visitor,AST_T* node,char* seq) {
 }
 
 void print_with_decorator(AST_T* ast_,visitor_T* visitor) {
-    if(visitor->lexer->values.hasDecorator==0&&visitor->lexer->values.isTabbedString==0) {
+    if(visitor->lexer->values.hasDecorator==0) {
         char* tab_sequence = calloc(visitor->lexer->values.tabAmmount,sizeof(char));
         char* sequence;
 
@@ -98,7 +98,7 @@ void print_with_decorator(AST_T* ast_,visitor_T* visitor) {
     } else printf("%s\n",ast_->string_value);
 }
 
-static AST_T* print_function(visitor_T* visitor,AST_T** args, int size) {
+static AST_T* print_function(visitor_T* visitor,AST_T** args, AST_T* node,int size) {
     /* To see if another type was printed for the appendVar decorator*/
     int string_printed=0;
     int int_printed=0;
@@ -125,7 +125,7 @@ static AST_T* print_function(visitor_T* visitor,AST_T** args, int size) {
                         }
                         printf("%d%s",visited->int_value,tab_sequence);
                     } else*/ 
-                    printf("%d",visited->int_value);
+                    printf("%d\n",visited->int_value);
                 }
                 else {
                     printf("\n\nErr[LINE %d]: Print is of type %s. Attempted to print type other than char\n\n",visitor->lexer->line,visitor->lexer->values.print_type);
@@ -157,8 +157,10 @@ AST_T* visitor_visit(visitor_T* visitor,AST_T* node) {
         case AST_FUNCTION_CALL: return visitor_visit_function_call(visitor,node);break;
         case AST_STRING: return visitor_visit_string(visitor,node);break;
         case AST_INT: return visitor_visit_int(visitor,node);break;
+        case AST_CHAR: return visitor_visit_char(visitor,node);
         case AST_COMPOUND: return visitor_visit_compound(visitor,node);break;
         case AST_NOOP: return node; break;
+        default: printf("Uncaught: %s",node->string_value);
     }
 
     printf("Err ~ Uncaught type: %d..%s\n",node->type,node->string_value);
@@ -193,7 +195,7 @@ AST_T* visitor_visit_variable_definition(visitor_T* visitor,AST_T* node) {
 AST_T* visitor_visit_function_call(visitor_T* visitor,AST_T* node) {
 
     if(strcmp(node->function_call_name,"print")==0) {
-        return print_function(visitor,node->function_call_arguments,node->function_call_arguments_size);
+        return print_function(visitor,node->function_call_arguments,node,node->function_call_arguments_size);
     }
 
     printf("\n\nUnknown method %s\n\n",node->function_call_name);
@@ -231,6 +233,9 @@ AST_T* visitor_visit_string(visitor_T* visitor,AST_T* node) {
     return node;
 }
 AST_T* visitor_visit_int(visitor_T* visitor, AST_T* node) {
+    return node;
+}
+AST_T* visitor_visit_char(visitor_T* visitor, AST_T* node) {
     return node;
 }
 AST_T* visitor_visit_compound(visitor_T* visitor,AST_T* node) {
