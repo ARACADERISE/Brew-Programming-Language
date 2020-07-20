@@ -219,7 +219,7 @@ AST_T* visitor_visit_variable(visitor_T* visitor,AST_T* node) {
                 if(!(strlen(visitor->lexer->values.print_type)<1)) {
                     if(!(visitor->lexer->values.isDerived==0))
                         printf("\n[REFERENCE:%ld bytes]%p\n",visitor->parser->memory->total_allocated_memory[visitor->parser->memory->index-1],visitor->lexer->values.ref_var_value_POINTER);
-                    else printf("\n[REFERENCE:%ld bytes]%s",visitor->parser->memory->next[1].total_allocated_memory[visitor->parser->memory->index-1],visitor->lexer->values.ref_var_value_DERIVED);
+                    else printf("\n[REFERENCE:%ld bytes]%s",visitor->parser->memory->next[1]->total_allocated_memory[visitor->parser->memory->index-1],visitor->lexer->values.ref_var_value_DERIVED);
                     //return visitor_visit(visitor, node);
                     return node;
                 }

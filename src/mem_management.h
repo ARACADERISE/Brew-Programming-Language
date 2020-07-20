@@ -19,7 +19,9 @@ typedef struct MEM_STRUCT {
     } DeAllocate;
     size_t* total_allocated_memory;
     size_t memory_left_over;
-    struct MEM_STRUCT* next;
+    struct MEM_STRUCT** next;
+
+    size_t memory_current_ability; // this will be a bitwise operation that checks sizes between total_allocated_memory[0] and the current index of total_allocated_memory
 } memory_struct;
 
 memory_struct* setup_memory();
