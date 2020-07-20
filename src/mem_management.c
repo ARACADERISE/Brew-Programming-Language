@@ -19,16 +19,10 @@ memory_struct* setup_memory() {
 
 memory_struct* MIS_Match_Memory_Allocate(memory_struct* mem) {
 
-    if(
-        (mem->total_allocated_memory[0]^mem->total_allocated_memory[mem->index])>mem->total_allocated_memory[0]||
-        (mem->total_allocated_memory[0]|mem->total_allocated_memory[mem->index])>=mem->total_allocated_memory[0]) 
-    {
-        // This should be the last size that was allocated
-        mem->memory_current_ability = ((mem->total_allocated_memory[0]^mem->total_allocated_memory[mem->index])>mem->total_allocated_memory[0]) ? (mem->total_allocated_memory[mem->index]|mem->total_allocated_memory[0])^1 : mem->total_allocated_memory[mem->index]|mem->total_allocated_memory[0];
-    } else {
-        // OR bitwiser operation will take place since it is not larger in either cases
-        mem->memory_current_ability = mem->total_allocated_memory[mem->index]|mem->total_allocated_memory[0];
-    }
+    // This should be the last size that was allocated
+    mem->memory_current_ability = ((mem->total_allocated_memory[0]^mem->total_allocated_memory[mem->index])>mem->total_allocated_memory[0]) ? (mem->total_allocated_memory[mem->index]|mem->total_allocated_memory[0])^1 : mem->total_allocated_memory[mem->index]|mem->total_allocated_memory[0];mem->total_allocated_memory[0];
+
+    //mem->total_allocated_memory[mem->index] |= mem->memory_current_ability;
 
     return mem;
 
@@ -40,7 +34,8 @@ memory_struct* Brew_Update_Memory(memory_struct* mem) {
 
     // memory_current_ability should be the same as the current allocation that was recently stored in total_allocated_memory. If not, throw an error
     if(!(mem->memory_current_ability==mem->total_allocated_memory[mem->index])) {
-        sprintf(stderr,"Error:");
+        // This will be a corrupt size check. But instead of giving an error, we will just correct the problem
+        mem->total_allocated_memory[mem->index] |= mem->memory_current_ability;
     }
 
     /* Setting up next[1] */
