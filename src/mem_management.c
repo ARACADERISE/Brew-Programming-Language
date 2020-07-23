@@ -20,15 +20,27 @@ memory_struct* setup_memory() {
 void MIS_Match_Memory_Allocate(memory_struct* mem) {
 
     // This should be the last size that was allocated
-    mem->memory_current_ability = ((mem->total_allocated_memory[0]^mem->total_allocated_memory[mem->index])>mem->total_allocated_memory[0]) ? (mem->total_allocated_memory[mem->index]|mem->total_allocated_memory[0])^1 : mem->total_allocated_memory[mem->index]|mem->total_allocated_memory[0];mem->total_allocated_memory[0];
+    if(!(mem->total_allocated_memory[mem->index]<0)) mem->memory_current_ability = ((mem->total_allocated_memory[0]^mem->total_allocated_memory[mem->index])>mem->total_allocated_memory[0]) ? (mem->total_allocated_memory[mem->index]|mem->total_allocated_memory[0])^1 : mem->total_allocated_memory[mem->index]|mem->total_allocated_memory[0];
 
     //mem->total_allocated_memory[mem->index] |= mem->memory_current_ability;
+
+}
+void MIS_Match_Make_Memory_perm(memory_struct* mem,int bit) {
+
+    mem->total_allocated_memory[mem->index] = (bit-1)^mem->memory_current_ability; // This should change every bit that is at least 1 bit off
+
+    // Checking if the above statement is accurate
+    if(mem->total_allocated_memory[mem->index]!=mem->memory_current_ability) {
+        // This should fix it if it isn't accurate..
+        mem->total_allocated_memory[mem->index] ^= mem->memory_current_ability^(mem->total_allocated_memory[0]|mem->total_allocated_memory[mem->index])-1;
+    }
 
 }
 
 memory_struct* Brew_Update_Memory(memory_struct* mem) {
 
     MIS_Match_Memory_Allocate(mem);
+    MIS_Match_Make_Memory_perm(mem,1/*By 1 bit*/); // Making it permanent
 
     // memory_current_ability should be the same as the current allocation that was recently stored in total_allocated_memory. If not, throw an error
     if(!(mem->memory_current_ability==mem->total_allocated_memory[mem->index])) {
@@ -72,9 +84,19 @@ char* Brew_Strict_DeAllocate(void* ptr, size_t strict_size, size_t size_of_alloc
             mem->total_allocated_memory[mem->index] = mem->DeAllocate.DeAllocatedSize;
             Brew_Update_Memory(mem);
         }
-        else ptr = realloc(ptr,strict_size*size_of_allocation);
+        else {
+            ptr = realloc(ptr,strict_size*size_of_allocation);
+            mem->DeAllocate.DeAllocatedSize = (strict_size*size_of_allocation);
+            mem->total_allocated_memory[mem->index] = mem->DeAllocate.DeAllocatedSize;
+            Brew_Update_Memory(mem);
+        }
     }
-    else ptr = (void*)0; // nothing to assign..will be a void poitner
+    else {
+        ptr = (void*)0; // nothing to assign..will be a void poitner
+        mem->DeAllocate.DeAllocatedSize = -1;
+        mem->total_allocated_memory[mem->index] = -1;
+        Brew_Update_Memory(mem);
+    }
 
     return ptr;
 }
