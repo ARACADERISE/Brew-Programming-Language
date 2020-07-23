@@ -54,7 +54,7 @@ static inline TypeAndValue* UpdTAV(TypeAndValue* TAV) {
 parser_T* init_parser(lexer_T* lexer,memory_struct* mem) {
     parser_T* parser = calloc(1,sizeof(struct PARSER_STRUCT));
 
-    TypeAndValue* TAV = calloc(1,sizeof(TypeAndValue));
+    TypeAndValue* TAV = calloc(1,sizeof(TypeAndValue)*2);
     UpdTAV(TAV);
     
     parser->lexer = lexer;
@@ -105,13 +105,13 @@ void parser_eat(TypeAndValue* TAV,parser_T* parser, int token_type) {
     }
 }
 AST_T* parser_parse(parser_T* parser) {
-    TypeAndValue* TAV = calloc(1,sizeof(TypeAndValue));
+    TypeAndValue* TAV = calloc(1,sizeof(struct T_A_V)*2);
     UpdTAV(TAV);
 
     return parser_parse_statements(TAV,parser);
 }
 AST_T* parser_parse_statement(parser_T* parser) {
-    TypeAndValue* TAV = calloc(1, sizeof(TypeAndValue));
+    TypeAndValue* TAV = calloc(1, sizeof(struct T_A_V)*2);
     UpdTAV(TAV);
 
     switch(parser->current_token->type) {
@@ -259,7 +259,7 @@ AST_T* parser_parse_statements(TypeAndValue* TAV,parser_T* parser) {
 
     //if(!(strcmp(parser->current_token->value,"varconst")==0)) {
         AST_T* compound = init_ast(AST_COMPOUND);
-        compound->compound_value = calloc(1,sizeof(struct AST_STRUCT));
+        compound->compound_value = calloc(1,sizeof(struct AST_STRUCT*)*2);
         AST_T* ast_statement = parser_parse_statement(parser);
 
         compound->compound_value[0] = ast_statement;
@@ -340,7 +340,7 @@ AST_T* parser_parse_term(parser_T* parser) {
 }*/
 AST_T* parser_parse_preVar_function_call(char* function_name,parser_T* parser) {
     AST_T* function_call = init_ast(AST_PREVAR_FUNCTION_CALL);
-    TypeAndValue* TAV = calloc(1,sizeof(TypeAndValue));
+    TypeAndValue* TAV = calloc(1,sizeof(struct T_A_V*));
     UpdTAV(TAV);
 
     parser_eat(TAV,parser, TOKEN_LPARENT);
@@ -370,7 +370,7 @@ AST_T* parser_parse_preVar_function_call(char* function_name,parser_T* parser) {
 }
 AST_T* parser_parse_function_call(char* function_name,parser_T* parser) {
     AST_T* function_call = init_ast(AST_FUNCTION_CALL);
-    TypeAndValue* TAV = calloc(1,sizeof(TypeAndValue));
+    TypeAndValue* TAV = calloc(1,sizeof(struct T_A_V*));
     UpdTAV(TAV);
 
     if(parser->current_token->type==TOKEN_ID)
@@ -400,7 +400,7 @@ AST_T* parser_parse_function_call(char* function_name,parser_T* parser) {
     return function_call;
 }
 AST_T* parser_parse_variable_definition(parser_T* parser) {
-    TypeAndValue* TAV = calloc(1,sizeof(TypeAndValue));
+    TypeAndValue* TAV = calloc(1,sizeof(struct T_A_V*)*2);
     UpdTAV(TAV);
 
     parser_eat(TAV,parser, TOKEN_ID);
@@ -842,7 +842,7 @@ AST_T* parser_parse_string(TypeAndValue* TAV,parser_T* parser) {
     //return init_ast(AST_NOOP);
 }
 AST_T* parser_parse_id(parser_T* parser) {
-    TypeAndValue* TAV = calloc(1,sizeof(TypeAndValue));
+    TypeAndValue* TAV = calloc(1,sizeof(struct T_A_V*)*2);
     UpdTAV(TAV);
 
     
