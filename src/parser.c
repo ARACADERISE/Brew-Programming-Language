@@ -54,7 +54,7 @@ static inline TypeAndValue* UpdTAV(TypeAndValue* TAV) {
 parser_T* init_parser(lexer_T* lexer,memory_struct* mem) {
     parser_T* parser = calloc(1,sizeof(struct PARSER_STRUCT));
 
-    TypeAndValue* TAV = calloc(1,sizeof(TypeAndValue)*2);
+    TypeAndValue* TAV = calloc(1,sizeof(struct T_A_V)*2);
     UpdTAV(TAV);
     
     parser->lexer = lexer;
