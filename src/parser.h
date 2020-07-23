@@ -6,7 +6,7 @@
 
 extern int BrandNeeded_;
 
-typedef struct {
+typedef struct T_A_V {
     struct{
         int ValueIndex,TypeIndex;
         char Type[8][0xFFFF];
