@@ -20,19 +20,19 @@ memory_struct* setup_memory() {
 void MIS_Match_Memory_Allocate(memory_struct* mem) {
 
     // This should be the last size that was allocated
-    if(!(mem->total_allocated_memory[mem->index]<0)) mem->memory_current_ability = ((mem->total_allocated_memory[0]^mem->total_allocated_memory[mem->index])>mem->total_allocated_memory[0]) ? (mem->total_allocated_memory[mem->index]|mem->total_allocated_memory[0])^1 : mem->total_allocated_memory[mem->index]|mem->total_allocated_memory[0];
+    if(!(mem->total_allocated_memory[mem->index]<=0)) mem->memory_current_ability = ((mem->total_allocated_memory[0]^mem->total_allocated_memory[mem->index])>mem->total_allocated_memory[0]) ? (mem->total_allocated_memory[mem->index]|mem->total_allocated_memory[0])^1 : mem->total_allocated_memory[mem->index]|mem->total_allocated_memory[0];
 
     //mem->total_allocated_memory[mem->index] |= mem->memory_current_ability;
 
 }
 void MIS_Match_Make_Memory_perm(memory_struct* mem,int bit) {
 
-    mem->total_allocated_memory[mem->index] = (bit-1)^mem->memory_current_ability; // This should change every bit that is at least 1 bit off
+    mem->total_allocated_memory[mem->index] = bit^(mem->memory_current_ability|mem->total_allocated_memory[mem->index])^1; // This should change every bit that is at least 1 bit off
 
     // Checking if the above statement is accurate
     if(mem->total_allocated_memory[mem->index]!=mem->memory_current_ability) {
         // This should fix it if it isn't accurate..
-        mem->total_allocated_memory[mem->index] ^= mem->memory_current_ability^(mem->total_allocated_memory[0]|mem->total_allocated_memory[mem->index])-1;
+        mem->total_allocated_memory[mem->index] ^= mem->memory_current_ability^(mem->total_allocated_memory[0]|mem->total_allocated_memory[mem->index])^1;
     }
 
 }
