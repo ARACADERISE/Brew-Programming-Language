@@ -20,7 +20,7 @@ memory_struct* setup_memory() {
 void MIS_Match_Memory_Allocate(memory_struct* mem) {
 
     // This should be the last size that was allocated
-    if(!(mem->total_allocated_memory[mem->index]<=0)) mem->memory_current_ability = ((mem->total_allocated_memory[0]^mem->total_allocated_memory[mem->index])>mem->total_allocated_memory[0]) ? (mem->total_allocated_memory[mem->index]|mem->total_allocated_memory[0])^1 : mem->total_allocated_memory[mem->index]|mem->total_allocated_memory[0];
+    if(!(mem->total_allocated_memory[mem->index]<0)) mem->memory_current_ability = ((mem->total_allocated_memory[0]^mem->total_allocated_memory[mem->index])>mem->total_allocated_memory[0]) ? (mem->total_allocated_memory[mem->index]|mem->total_allocated_memory[0])^1 : mem->total_allocated_memory[mem->index]|mem->total_allocated_memory[0];
 
     //mem->total_allocated_memory[mem->index] |= mem->memory_current_ability;
 
